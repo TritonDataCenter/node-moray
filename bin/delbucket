@@ -15,7 +15,7 @@ var moray = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: 'putbucket',
+        name: path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
         stream: process.stderr,
         serializers: bunyan.stdSerializers
@@ -30,7 +30,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-h host] [-p port] name';
+        str += '[-v] [-h host] [-p port] bucket';
         console.error(str);
         process.exit(1);
 }
@@ -71,7 +71,7 @@ function parseOptions() {
         }
 
         if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "name"');
+                usage('missing required argument: "bucket"');
 
         opts.name = process.argv[parser.optind()];
         return (opts);
@@ -91,7 +91,7 @@ client = moray.createClient({
 });
 
 client.on('connect', function onConnect() {
-        client.delBucket(options.name, {}, function callback(err) {
+        client.delBucket(options.name, function callback(err) {
                 if (err) {
                         console.error(err.toString());
                         process.exit(1);

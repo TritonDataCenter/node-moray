@@ -15,7 +15,7 @@ var moray = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: 'putobject',
+        name: path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
         stream: process.stderr,
         serializers: bunyan.stdSerializers
@@ -30,7 +30,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-h host] [-p port] [-d data] /$bucket/$key';
+        str += '[-v] [-h host] [-p port] [-d data] bucket key';
         console.error(str);
         process.exit(1);
 }
@@ -76,16 +76,13 @@ function parseOptions() {
         }
 
         if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "name"');
+                usage('missing required arguments: "bucket"');
+        if ((parser.optind() + 1) >= process.argv.length)
+                usage('missing required arguments: "key"');
 
-        var tmp = process.argv[parser.optind()].split('/');
-        tmp.shift();
-        if (tmp.length < 2)
-                usage('name must be "/$bucket/$key"');
-
-        opts.bucket = tmp.shift();
-        tmp.unshift('');
-        opts.key = tmp.join('/');
+        var tmp = process.argv.slice(parser.optind());
+        opts.bucket = tmp[0];
+        opts.key = tmp[1];
 
         return (opts);
 }

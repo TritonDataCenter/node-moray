@@ -15,7 +15,7 @@ var moray = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: 'putbucket',
+        name: path.basename(process.argv[1]),
         level: (process.env.LOG_LEVEL || 'info'),
         stream: process.stderr,
         serializers: bunyan.stdSerializers
@@ -93,7 +93,7 @@ function parseOptions() {
         }
 
         if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "name"');
+                usage('missing required argument: "bucket"');
 
         opts.name = process.argv[parser.optind()];
         return (opts);
