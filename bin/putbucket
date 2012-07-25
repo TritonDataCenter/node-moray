@@ -1,0 +1,126 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+
+var path = require('path');
+
+var bunyan = require('bunyan');
+var getopt = require('posix-getopt');
+var uuid = require('node-uuid');
+
+var moray = require('../lib');
+
+
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+        name: 'putbucket',
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr,
+        serializers: bunyan.stdSerializers
+});
+
+
+
+///--- Functions
+
+function usage(msg) {
+        if (msg)
+                console.error(msg);
+
+        var str = 'usage: ' + path.basename(process.argv[1]);
+        str += '[-v] [-h host] [-p port] [-i index] [-u index] name\n';
+        str += 'indexes are of the form "name:type"';
+        console.error(str);
+        process.exit(1);
+}
+
+
+function parseOptions() {
+        var option;
+        var opts = {
+                host: 'localhost',
+                port: 2020,
+                index: {}
+        };
+        var parser = new getopt.BasicParser('vi:h:p:u:',
+                                            process.argv);
+        var tmp;
+
+        while ((option = parser.getopt()) !== undefined && !option.error) {
+                switch (option.option) {
+                case 'h':
+                        opts.host = option.optarg;
+                        break;
+
+                case 'i':
+                        tmp = option.optarg.split(':');
+                        opts.index[tmp[0]] = {
+                                type: tmp[1] || 'string',
+                                unique: false
+                        };
+                        break;
+
+                case 'n':
+                        opts.name = option.optarg;
+                        break;
+
+                case 'p':
+                        opts.port = parseInt(option.optarg, 10);
+                        break;
+
+                case 'u':
+                        tmp = option.optarg.split(':');
+                        opts.index[tmp[0]] = {
+                                type: tmp[1] || 'string',
+                                unique: true
+                        };
+                        break;
+
+                case 'v':
+                        // Allows us to set -vvv -> this little hackery
+                        // just ensures that we're never < TRACE
+                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
+                        if (LOG.level() <= bunyan.DEBUG)
+                                LOG = LOG.child({src: true});
+                        break;
+
+                default:
+                        process.exit(1);
+                        break;
+                }
+        }
+
+        if (parser.optind() >= process.argv.length)
+                usage('missing required argument: "name"');
+
+        opts.name = process.argv[parser.optind()];
+        return (opts);
+}
+
+
+
+///--- Mainline
+
+var client;
+var options = parseOptions();
+
+client = moray.createClient({
+        host: options.host,
+        log: LOG,
+        port: options.port
+});
+
+client.on('connect', function onConnect() {
+        var cfg = {
+                index: options.index
+        };
+        client.putBucket(options.name, cfg, function callback(err) {
+                if (err) {
+                        console.error(err.message);
+                        process.exit(1);
+                }
+                process.exit(0);
+        });
+});
