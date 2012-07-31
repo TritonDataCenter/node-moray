@@ -97,6 +97,13 @@ client.on('connect', function onConnect() {
                         process.exit(1);
                 }
 
+                b.pre = (b.pre || []).map(function (f) {
+                        return (f.toString());
+                });
+                b.post = (b.post || []).map(function (f) {
+                        return (f.toString());
+                });
+
 		console.log(JSON.stringify(b, null, 2));
                 process.exit(0);
         });

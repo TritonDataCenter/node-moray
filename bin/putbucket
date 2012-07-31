@@ -30,7 +30,7 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-h host] [-p port] [-i index] [-u index] name\n';
+        str += '[-v] [-h host] [-p port] [-i index] [-u index] [-s] name\n';
         str += 'indexes are of the form "name:type"';
         console.error(str);
         process.exit(1);
@@ -44,7 +44,7 @@ function parseOptions() {
                 port: 2020,
                 index: {}
         };
-        var parser = new getopt.BasicParser('vi:h:p:u:',
+        var parser = new getopt.BasicParser('svi:h:p:u:',
                                             process.argv);
         var tmp;
 
@@ -70,6 +70,10 @@ function parseOptions() {
                         opts.port = parseInt(option.optarg, 10);
                         break;
 
+                case 's':
+                        opts.stdin = true;
+                        break;
+
                 case 'u':
                         tmp = option.optarg.split(':');
                         opts.index[tmp[0]] = {
@@ -93,34 +97,64 @@ function parseOptions() {
         }
 
         if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "bucket"');
+                usage('missing required argument: "name"');
+        var tmp = process.argv.slice(parser.optind());
+        opts.name = tmp[0];
 
-        opts.name = process.argv[parser.optind()];
+        if (opts.stdin) {
+                opts.config = '';
+                process.stdin.setEncoding('utf8');
+                process.stdin.resume();
+                process.stdin.on('data', function (chunk) {
+                        opts.config += chunk;
+                });
+
+                process.stdin.on('end', function () {
+                        function evalFn(f) {
+                                var fn;
+                                fn = eval('fn = ' + f);
+                                return (fn);
+                        }
+                        opts.config = JSON.parse(opts.config);
+                        opts.config.pre = (opts.config.pre || []).map(evalFn);
+                        opts.config.post = (opts.config.post || []).map(evalFn);
+                });
+        }
+
         return (opts);
+}
+
+
+
+function putBucket() {
+        var client = moray.createClient({
+                host: options.host,
+                log: LOG,
+                port: options.port
+        });
+        var cfg = options.config || {
+                index: options.index
+        };
+        client.on('connect', function onConnect() {
+                client.putBucket(options.name, cfg, function callback(err) {
+                        if (err) {
+                                console.error(err.message);
+                                process.exit(1);
+                        }
+                        process.exit(0);
+                });
+        });
 }
 
 
 
 ///--- Mainline
 
-var client;
 var options = parseOptions();
-
-client = moray.createClient({
-        host: options.host,
-        log: LOG,
-        port: options.port
-});
-
-client.on('connect', function onConnect() {
-        var cfg = {
-                index: options.index
-        };
-        client.putBucket(options.name, cfg, function callback(err) {
-                if (err) {
-                        console.error(err.message);
-                        process.exit(1);
-                }
-                process.exit(0);
+if (options.stdin) {
+        process.stdin.on('end', function () {
+                process.nextTick(putBucket);
         });
-});
+} else {
+        putBucket();
+}
