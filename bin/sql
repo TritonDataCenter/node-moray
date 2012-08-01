@@ -1,0 +1,110 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// Copyright (c) 2012, Joyent, Inc. All rights reserved.
+
+var path = require('path');
+
+var bunyan = require('bunyan');
+var getopt = require('posix-getopt');
+var uuid = require('node-uuid');
+
+var moray = require('../lib');
+
+
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+        name: path.basename(process.argv[1]),
+        level: (process.env.LOG_LEVEL || 'info'),
+        stream: process.stderr,
+        serializers: bunyan.stdSerializers
+});
+
+
+
+///--- Functions
+
+function usage(msg) {
+        if (msg)
+                console.error(msg);
+
+        var str = 'usage: ' + path.basename(process.argv[1]);
+        str += '[-v] [-h host] [-p port] statement';
+        console.error(str);
+        process.exit(1);
+}
+
+
+function parseOptions() {
+        var option;
+        var opts = {
+                host: 'localhost',
+                port: 2020,
+        };
+        var parser = new getopt.BasicParser('vh:p:',
+                                            process.argv);
+        var tmp;
+
+        while ((option = parser.getopt()) !== undefined && !option.error) {
+                switch (option.option) {
+                case 'h':
+                        opts.host = option.optarg;
+                        break;
+
+                case 'p':
+                        opts.port = parseInt(option.optarg, 10);
+                        break;
+
+                case 'v':
+                        // Allows us to set -vvv -> this little hackery
+                        // just ensures that we're never < TRACE
+                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
+                        if (LOG.level() <= bunyan.DEBUG)
+                                LOG = LOG.child({src: true});
+                        break;
+
+                default:
+                        usage('invalid option: ' + option.option);
+                        break;
+                }
+        }
+
+        if (parser.optind() >= process.argv.length)
+                usage('missing required arguments: "statement"');
+
+        var tmp = process.argv.slice(parser.optind());
+        opts.statement = tmp[0];
+
+        return (opts);
+}
+
+
+
+///--- Mainline
+
+var client;
+var options = parseOptions();
+
+client = moray.createClient({
+        host: options.host,
+        log: LOG,
+        port: options.port
+});
+
+client.on('connect', function onConnect() {
+        var req = client.sql(options.statement);
+
+        req.once('error', function (err) {
+                console.error(err.message);
+                process.exit(1);
+        });
+
+        req.on('record', function (obj) {
+		console.log(JSON.stringify(obj, null, 2));
+        });
+
+        req.once('end', function () {
+                process.exit(0);
+        });
+});
