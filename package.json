@@ -6,10 +6,10 @@
         "private": true,
         "main": "./lib/index.js",
         "dependencies": {
-                "assert-plus": "0.1.0",
-                "bunyan": "0.10.0",
-                "clone": "0.1.0",
-                "fast": "0.1.5",
+                "assert-plus": "0.1.1",
+                "bunyan": "0.13.5",
+                "clone": "0.1.1",
+                "fast": "git://github.com:mcavage/node-fast.git#73d9658",
                 "node-uuid": "1.3.3",
                 "posix-getopt": "1.0.0"
         },
