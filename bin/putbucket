@@ -42,9 +42,10 @@ function parseOptions() {
         var opts = {
                 host: 'localhost',
                 port: 2020,
-                index: {}
+                index: {},
+                options: {}
         };
-        var parser = new getopt.BasicParser('svi:h:p:u:',
+        var parser = new getopt.BasicParser('svti:h:p:u:',
                                             process.argv);
         var tmp;
 
@@ -72,6 +73,10 @@ function parseOptions() {
 
                 case 's':
                         opts.stdin = true;
+                        break;
+
+                case 't':
+                        opts.options.trackModification = true;
                         break;
 
                 case 'u':
@@ -133,7 +138,8 @@ function putBucket() {
                 port: options.port
         });
         var cfg = options.config || {
-                index: options.index
+                index: options.index,
+                options: options.options
         };
         client.on('connect', function onConnect() {
                 client.putBucket(options.name, cfg, function callback(err) {
