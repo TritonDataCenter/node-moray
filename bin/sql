@@ -101,7 +101,8 @@ client.on('connect', function onConnect() {
         });
 
         req.on('record', function (obj) {
-		console.log(JSON.stringify(obj, null, 2));
+                if (typeof (obj) === 'object' && obj !== null)
+		        console.log(JSON.stringify(obj, null, 2));
         });
 
         req.once('end', function () {
