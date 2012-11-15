@@ -7,9 +7,9 @@
         "main": "./lib/index.js",
         "dependencies": {
                 "assert-plus": "0.1.2",
-                "bunyan": "0.14.6",
+                "bunyan": "0.16.7",
                 "clone": "0.1.1",
-                "fast": "git://github.com/mcavage/node-fast.git#119ce35",
+                "fast": "0.2.0",
                 "node-uuid": "1.4.0",
                 "posix-getopt": "1.0.0"
         },
