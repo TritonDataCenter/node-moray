@@ -11,6 +11,7 @@
                 "clone": "0.1.1",
                 "fast": "0.2.2",
                 "node-uuid": "1.4.0",
+                "once": "1.1.1",
                 "posix-getopt": "1.0.0"
         },
         "directories": {
