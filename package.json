@@ -7,8 +7,10 @@
         "main": "./lib/index.js",
         "dependencies": {
                 "assert-plus": "0.1.2",
+                "backoff": "1.2.0",
                 "clone": "0.1.5",
                 "fast": "0.2.3",
+                "native-dns": "0.4.0",
                 "node-uuid": "1.4.0",
                 "once": "1.1.1",
                 "posix-getopt": "1.0.0"
