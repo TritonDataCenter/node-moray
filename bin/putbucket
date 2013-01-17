@@ -40,12 +40,12 @@ function usage(msg) {
 function parseOptions() {
         var option;
         var opts = {
-                host: 'localhost',
+                host: '127.0.0.1',
                 port: 2020,
                 index: {},
                 options: {}
         };
-        var parser = new getopt.BasicParser('svti:h:p:u:',
+        var parser = new getopt.BasicParser('svti:h:p:u:x:',
                                             process.argv);
         var tmp;
 
@@ -93,6 +93,10 @@ function parseOptions() {
                         LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
                         if (LOG.level() <= bunyan.DEBUG)
                                 LOG = LOG.child({src: true});
+                        break;
+
+                case 'x':
+                        opts.options.version = parseInt(option.optarg, 10);
                         break;
 
                 default:
