@@ -32,10 +32,10 @@ var CONFIG = {
                 },
                 log: bunyan.createLogger({
                         name: 'moray_client',
-                        level: process.env.LOG_LEVEL || 'debug',
+                        level: process.env.LOG_LEVEL || 'info',
                         stream: process.stdout
                 }),
-                max: 10,
+                maxConnections: 100,
                 retry: {retries: 2},
                 url: process.env.MORAY_URL || 'tcp://127.0.0.1:2020'
         });
@@ -44,23 +44,39 @@ var CONFIG = {
                 client.putBucket(BUCKET, CONFIG, function (init_err) {
                         assert.ifError(init_err);
 
+                        var MAX = 25000;
                         function run() {
                                 var done = 0;
                                 function cb(err) {
-                                        if (err)
-                                                console.error('put failed: ' +
-                                                              err.stack);
+                                        if (err) {
+                                                console.error('put failed: %s',
+                                                              err.toString());
+                                        }
 
-                                        if (++done === 10)
-                                                setTimeout(run, 10000);
+                                        if (++done === MAX) {
+                                                function d_cb(derr) {
+                                                        assert.ifError(derr);
+                                                        client.close();
+                                                }
+                                                client.deleteBucket(BUCKET,
+                                                                    d_cb);
+                                        }
                                 }
 
-                                for (var i = 0; i < 10; i++) {
-                                        var k = uuid.v1();
-                                        var v = {
+                                function put(k, v) {
+                                        function p_cb(err) {
+                                                assert.ifError(err);
+                                                client.getObject(BUCKET, k, cb);
+                                        }
+                                        client.putObject(BUCKET, k, v, p_cb);
+                                }
+
+                                for (var i = 0; i < MAX; i++) {
+                                        var _k = uuid.v1();
+                                        var _v = {
                                                 foo: '' + i
                                         };
-                                        client.putObject(BUCKET, k, v, cb);
+                                        put(_k, _v);
                                 }
                         }
 
