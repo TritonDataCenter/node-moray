@@ -7,9 +7,8 @@
         "main": "./lib/index.js",
         "dependencies": {
                 "assert-plus": "0.1.2",
-                "backoff": "1.2.1",
-                "clone": "0.1.5",
-                "fast": "0.2.4",
+                "backoff": "2.0.0",
+                "fast": "0.2.5",
                 "native-dns": "0.4.0",
                 "node-uuid": "1.4.0",
                 "once": "1.1.1",
