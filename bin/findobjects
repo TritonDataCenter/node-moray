@@ -9,7 +9,7 @@ var getopt = require('posix-getopt');
 var uuid = require('node-uuid');
 
 var moray = require('../lib');
-
+var prettyPrint = true;
 
 
 ///--- Globals
@@ -30,8 +30,8 @@ function usage(msg) {
                 console.error(msg);
 
         var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-a attr] [-d attr] [-l limit] [-o offset] [-h host] ' +
-                '[-p port] bucket filter';
+        str += '[-v] [-H] [-a attr] [-d attr] [-l limit] [-o offset] ' +
+            '[-h host] [-p port] bucket filter';
         console.error(str);
         process.exit(1);
 }
@@ -44,7 +44,7 @@ function parseOptions() {
                 port: 2020,
                 sort: {}
         };
-        var parser = new getopt.BasicParser('va:d:h:l:o:p:',
+        var parser = new getopt.BasicParser('va:d:Hh:l:o:p:',
                                             process.argv);
         var tmp;
 
@@ -58,6 +58,10 @@ function parseOptions() {
                 case 'd':
                         opts.sort.attribute = option.optarg;
                         opts.sort.order = 'DESC';
+                        break;
+
+                case 'H':
+                        prettyPrint = false;
                         break;
 
                 case 'h':
@@ -128,7 +132,10 @@ client.on('connect', function onConnect() {
                 process.exit(1);
         });
         req.on('record', function (obj) {
-		console.log(JSON.stringify(obj, null, 2));
+                if (prettyPrint)
+                        console.log(JSON.stringify(obj, null, 2));
+                else
+                        console.log(JSON.stringify(obj));
         });
 
         req.on('end', function () {
