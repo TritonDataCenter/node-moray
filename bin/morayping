@@ -97,7 +97,7 @@ client = moray.createClient({
 });
 
 client.on('connect', function onConnect() {
-        client.ping({deep: options.deep}, function callback(err) {
+        client.ping({deep: options.deep, log: LOG}, function callback(err) {
                 if (err) {
                         console.error(err.toString());
                         process.exit(1);
