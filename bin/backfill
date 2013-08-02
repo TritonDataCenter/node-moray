@@ -1,0 +1,234 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// vim: set filetype=javascript :
+// Copyright (c) 2013, Joyent, Inc. All rights reserved.
+
+// ./backfill -i name -l 10 wf_jobs
+
+var path = require('path');
+var util = require('util');
+var bunyan = require('bunyan');
+var getopt = require('posix-getopt');
+var uuid = require('node-uuid');
+
+var moray = require('../lib');
+
+
+
+///--- Globals
+
+var LOG = bunyan.createLogger({
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: bunyan.stdSerializers
+});
+
+// Total number of objects to backfill
+var TOTAL = 0;
+// Number of objects we've already backfilled:
+var PROCESSED = 0;
+
+
+///--- Functions
+
+function usage(msg) {
+    if (msg) {
+        console.error(msg);
+    }
+
+    var str = 'usage: ' + path.basename(process.argv[1]);
+    str += '[-v] [-h host] [-p port] [-i index] [-l limit] bucket';
+    console.error(str);
+    process.exit(1);
+}
+
+function parseOptions() {
+    var option;
+    var opts = {
+            host: '127.0.0.1',
+            port: 2020,
+            indexes: [],
+            limit: 10
+    };
+    var parser = new getopt.BasicParser('vh:p:l:i:', process.argv);
+    var tmp;
+
+    while ((option = parser.getopt()) !== undefined && !option.error) {
+        switch (option.option) {
+        case 'h':
+            opts.host = option.optarg;
+            break;
+
+        case 'p':
+            opts.port = parseInt(option.optarg, 10);
+            break;
+
+        case 'i':
+            tmp = option.optarg;
+            opts.indexes.push(tmp); 
+            break;
+
+        case 'l':
+            opts.limit = parseInt(option.optarg, 10);
+            break;
+
+
+        case 'v':
+            // Allows us to set -vvv -> this little hackery
+            // just ensures that we're never < TRACE
+            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
+            if (LOG.level() <= bunyan.DEBUG)
+                    LOG = LOG.child({src: true});
+            break;
+
+        default:
+            process.exit(1);
+            break;
+        }
+    }
+
+    if (parser.optind() >= process.argv.length) {
+        usage('missing required argument: "bucket"');
+    }
+
+    opts.name = process.argv[parser.optind()];
+    return (opts);
+}
+
+
+var options = parseOptions();
+
+
+
+function backfillBucket() {
+    var client = moray.createClient({
+        host: options.host,
+        log: LOG,
+        port: options.port
+    });
+    var cfg = options.config || {
+        options: options.options
+    };
+
+    client.on('connect', function onConnect() {
+        function countObjects(cb) {
+            if (TOTAL === 0) {
+                var ary = [];
+                options.indexes.forEach(function (i) {
+                    ary.push('\'%' + i + '%\'');
+                });
+                var pred = 'from ' + options.name + ' where _value like any (array[' +
+                    ary.join(',') + '])';
+
+                var sql = 'select count(_id) ' + pred;
+
+                // console.log(sql);
+
+                var countReq = client.sql(sql);
+
+                countReq.once('error', function (err) {
+                        console.error(err.message);
+                        return cb(err);
+                });
+
+                countReq.on('record', function (obj) {
+                    if (typeof (obj) === 'object' && obj !== null) {
+                        TOTAL = Number(obj.count);
+                        console.log('Updating a TOTAL of %d records', TOTAL);
+                    }
+                });
+
+                countReq.once('end', function () {
+                    return cb(); 
+                });
+            } else {
+                return cb();
+            }
+        }
+
+        function backfillObjects(offset, limit, cb) {
+            var done = 0;
+            var _2update = {};
+
+            function wait() {
+                if (done === limit || TOTAL === PROCESSED) {
+                    return cb();
+                } else {
+                    return setTimeout(wait, 1000);
+                }
+            }
+
+            var ary = [];
+            options.indexes.forEach(function (i) {
+                ary.push('\'%' + i + '%\'');
+            });
+            var pred = 'from ' + options.name + ' where _value like any (array[' +
+                    ary.join(',') + '])';
+
+            var sql = 'select * ' + pred + ' order by _id limit ' + limit +
+                    ' offset ' + offset;
+
+
+            // console.log(sql);
+
+            var req = client.sql(sql);
+
+            req.once('error', function (err) {
+                    console.error(err.message);
+                    return cb(err);
+            });
+
+            req.on('record', function (obj) {
+                if (obj) {
+                    _2update[obj._key] = obj._value;
+                }
+            });
+
+            req.on('end', function () {
+                Object.keys(_2update).forEach(function (o) {
+                    client.putObject(options.name, o, JSON.parse(_2update[o]), function (err) {
+                        if (err) {
+                            console.log(err.message);
+                        }
+                        console.log('Updated ' + options.name + ' record with _key ' + o);
+                        done += 1;
+                        PROCESSED += 1;
+                    });
+                });
+                return wait();
+            });
+
+        }
+
+
+        function processCb(err) {
+            if (err) {
+                console.log(err.message);
+                if (err.message ===
+                        'the underlying connection has been closed') {
+                    LOG.warn('Waiting for client to reconnect');
+                    client.once('connect', function reconnectCallback() {
+                        backfillObjects(PROCESSED, options.limit, processCb);
+                    });
+                }
+                return (false);
+            } else if (PROCESSED < TOTAL) {
+                return backfillObjects(PROCESSED, options.limit, processCb);
+            } else {
+                console.log('Backfill of %d objects DONE!', TOTAL);
+                process.exit(0);
+            }
+        }
+
+        countObjects(function (err) {
+            if (err) {
+                console.error(err.message);
+            }
+            backfillObjects(0, options.limit, processCb);
+        });
+    });
+
+}
+
+backfillBucket();
