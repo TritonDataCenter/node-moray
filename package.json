@@ -1,30 +1,30 @@
 {
-        "name": "moray",
-        "description": "Moray client library",
-        "version": "1.0.0",
-        "author": "Joyent (joyent.com)",
-        "private": true,
-        "main": "./lib/index.js",
-        "repository": {
-                "type": "git",
-                "url": "git+ssh://git@git.joyent.com:node-moray.git"
-        },
-        "dependencies": {
-                "assert-plus": "0.1.4",
-                "backoff": "2.3.0",
-                "bunyan": "0.21.3",
-                "fast": "0.2.8",
-                "native-dns": "0.4.1",
-                "node-uuid": "1.4.0",
-                "once": "1.1.1",
-                "posix-getopt": "1.0.0",
-                "progbar": "0.0.2"
-        },
-        "directories": {
-                "bin": "./bin",
-                "lib": "./lib"
-        },
-        "devDependencies": {
-                "nodeunit": "0.8.1"
-        }
+    "name": "moray",
+    "description": "Moray client library",
+    "version": "1.0.0",
+    "author": "Joyent (joyent.com)",
+    "private": true,
+    "main": "./lib/index.js",
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@git.joyent.com:node-moray.git"
+    },
+    "dependencies": {
+        "assert-plus": "0.1.4",
+        "backoff": "2.3.0",
+        "bunyan": "0.21.4",
+        "fast": "0.3.1",
+        "native-dns": "0.4.1",
+        "libuuid": "0.1.2",
+        "once": "1.2.0",
+        "posix-getopt": "1.0.0",
+        "progbar": "0.0.2"
+    },
+    "directories": {
+        "bin": "./bin",
+        "lib": "./lib"
+    },
+    "devDependencies": {
+        "nodeunit": "0.8.1"
+    }
 }
