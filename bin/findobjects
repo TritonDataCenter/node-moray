@@ -7,7 +7,6 @@ var url = require('url');
 
 var bunyan = require('bunyan');
 var getopt = require('posix-getopt');
-var uuid = require('node-uuid');
 
 var moray = require('../lib');
 var prettyPrint = true;

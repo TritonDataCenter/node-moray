@@ -34,7 +34,6 @@ var util = require('util'),
 var bunyan = require('bunyan');
 var getopt = require('posix-getopt');
 var ProgressBar = require('progbar').ProgressBar;
-var uuid = require('node-uuid');
 
 var moray = require('../lib');
 
