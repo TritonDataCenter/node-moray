@@ -141,7 +141,6 @@ function parseOptions() {
 var options = parseOptions();
 
 
-
 function backfillBucket() {
     var client = moray.createClient({
         host: options.host,
@@ -153,19 +152,30 @@ function backfillBucket() {
     };
     var bar;
 
-
-    var ary = [];
-    options.indexes.forEach(function (i) {
-        ary.push('\'%' + i + '%\'');
-    });
-    var pred = 'from ' + options.name + ' where _value like any (array[' +
-        ary.join(',') + '])';
-    Object.keys(options.predicates).forEach(function (field) {
-        var values = options.predicates[field];
-        pred += format(' and %s in (\'%s\')', field, values.join("', '"));
-    });
-
     client.on('connect', function onConnect() {
+        var pred;
+        function getPredicate(cb) {
+            client.getBucket(options.name, function (err, bucket) {
+                if (err) return cb(err);
+                var ary = [];
+                options.indexes.forEach(function (i) {
+                    ary.push('\'%' + i + '%\'');
+                });
+                pred = 'from ' + options.name + ' where _value like any (array[' +
+                    ary.join(',') + '])';
+                Object.keys(options.predicates).forEach(function (field) {
+                    var isArray = bucket.index[field] && bucket.index[field].type[0] == '[';
+                    var values = options.predicates[field];
+                    if (isArray) {
+                        pred += format(' and %s in (array[\'%s\'])', field, values.join("'], array['"));
+                    } else {
+                        pred += format(' and %s in (\'%s\')', field, values.join("', '"));
+                    }
+                });
+                cb(null, pred);
+            });
+        }
+
         function countObjects(cb) {
             if (TOTAL === 0) {
                 var sql = 'select count(_id) ' + pred;
@@ -265,7 +275,6 @@ function backfillBucket() {
 
         }
 
-
         function processCb(err) {
             if (err) {
                 console.log(err.message);
@@ -287,11 +296,13 @@ function backfillBucket() {
             }
         }
 
-        countObjects(function (err) {
-            if (err) {
-                console.error(err.message);
-            }
-            backfillObjects(0, options.limit, processCb);
+        getPredicate(function (pErr, pred_) {
+            countObjects(function (err) {
+                if (err) {
+                    console.error(err.message);
+                }
+                backfillObjects(0, options.limit, processCb);
+            });
         });
     });
 
