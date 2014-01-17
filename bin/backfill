@@ -194,7 +194,8 @@ function backfillBucket() {
                         console.log('Backfilling %d records', TOTAL);
                         bar = new ProgressBar({
                             size: TOTAL,
-                            filename: options.name
+                            filename: options.name,
+                            bytes: false
                         });
                     }
                 });
@@ -258,15 +259,11 @@ function backfillBucket() {
                         done += 1;
                         PROCESSED += 1;
                         if (err) {
-                            bar._write('error with _key "' + key + '":'
-                                + err.message, true);
+                            bar.log('error with _key "' + key + '":'
+                                + err.message);
                         } else {
-                            // Note: hack into progbar's internal write so
-                            // we can erase the current progbar. This *sort*
-                            // of works. It is helpful for large sets with
-                            // few changes at least so good enough.
-                            bar._write('Updated ' + options.name
-                                + ' record with _key "' + key + '"\n', true);
+                            bar.log('Updated ' + options.name
+                                + ' record with _key "' + key + '"');
                         }
                     });
                 });
