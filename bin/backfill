@@ -1,6 +1,6 @@
 #!/usr/bin/env node
+// -*- mode: js -*-
 /**
- * -*- mode: js -*-
  * vim: set filetype=javascript :
  *
  * Copyright (c) 2013, Joyent, Inc. All rights reserved.
@@ -30,7 +30,6 @@
 var p = console.log;
 var path = require('path');
 var util = require('util'),
-    format = util.format;
 var bunyan = require('bunyan');
 var getopt = require('posix-getopt');
 var ProgressBar = require('progbar').ProgressBar;
@@ -40,6 +39,8 @@ var moray = require('../lib');
 
 
 ///--- Globals
+
+format = util.format;
 
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
@@ -53,6 +54,7 @@ var TOTAL = 0;
 // Number of objects we've already backfilled:
 var PROCESSED = 0;
 var START = Date.now();
+
 
 
 ///--- Functions
@@ -72,11 +74,11 @@ function usage(msg) {
 function parseOptions() {
     var option;
     var opts = {
-            host: '127.0.0.1',
-            port: 2020,
-            indexes: [],
-            limit: 100,
-            predicates: {}
+        host: '127.0.0.1',
+        port: 2020,
+        indexes: [],
+        limit: 100,
+        predicates: {}
     };
     var parser = new getopt.BasicParser('vh:p:l:i:P:', process.argv);
     var tmp;
@@ -104,7 +106,7 @@ function parseOptions() {
             var equal = option.optarg.indexOf('=');
             if (equal === -1) {
                 usage('error: "-P" arg is not of the form "field=value":'
-                    + option.optarg);
+                      + option.optarg);
             }
             var field = option.optarg.slice(0, equal);
             var value = option.optarg.slice(equal + 1);
@@ -120,7 +122,7 @@ function parseOptions() {
             // just ensures that we're never < TRACE
             LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
             if (LOG.level() <= bunyan.DEBUG)
-                    LOG = LOG.child({src: true});
+                LOG = LOG.child({src: true});
             break;
 
         default:
@@ -184,8 +186,8 @@ function backfillBucket() {
                 var countReq = client.sql(sql);
 
                 countReq.once('error', function (err) {
-                        console.error(err.message);
-                        return cb(err);
+                    console.error(err.message);
+                    return cb(err);
                 });
 
                 countReq.on('record', function (obj) {
@@ -221,13 +223,13 @@ function backfillBucket() {
             }
 
             var sql = 'select * ' + pred + ' order by _id limit ' + limit +
-                    ' offset ' + offset;
+                ' offset ' + offset;
 
             var req = client.sql(sql);
 
             req.once('error', function (err) {
-                    console.error(err.message);
-                    return cb(err);
+                console.error(err.message);
+                return cb(err);
             });
 
             req.on('record', function (obj) {
@@ -260,10 +262,10 @@ function backfillBucket() {
                         PROCESSED += 1;
                         if (err) {
                             bar.log('error with _key "' + key + '":'
-                                + err.message);
+                                    + err.message);
                         } else {
                             bar.log('Updated ' + options.name
-                                + ' record with _key "' + key + '"');
+                                    + ' record with _key "' + key + '"');
                         }
                     });
                 });
@@ -276,7 +278,7 @@ function backfillBucket() {
             if (err) {
                 console.log(err.message);
                 if (err.message ===
-                        'the underlying connection has been closed') {
+                    'the underlying connection has been closed') {
                     LOG.warn('Waiting for client to reconnect');
                     client.once('connect', function reconnectCallback() {
                         backfillObjects(PROCESSED, options.limit, processCb);
@@ -288,7 +290,7 @@ function backfillBucket() {
             } else {
                 bar.end();
                 console.log('Backfill of %d objects done (in %d seconds)',
-                    TOTAL, (Date.now() - START) / 1000);
+                            TOTAL, (Date.now() - START) / 1000);
                 process.exit(0);
             }
         }

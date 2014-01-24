@@ -15,10 +15,10 @@ var moray = require('../lib');
 ///--- Globals
 
 var LOG = bunyan.createLogger({
-        name: path.basename(process.argv[1]),
-        level: (process.env.LOG_LEVEL || 'info'),
-        stream: process.stderr,
-        serializers: bunyan.stdSerializers
+    name: path.basename(process.argv[1]),
+    level: (process.env.LOG_LEVEL || 'info'),
+    stream: process.stderr,
+    serializers: bunyan.stdSerializers
 });
 
 
@@ -26,61 +26,61 @@ var LOG = bunyan.createLogger({
 ///--- Functions
 
 function usage(msg) {
-        if (msg)
-                console.error(msg);
+    if (msg)
+        console.error(msg);
 
-        var str = 'usage: ' + path.basename(process.argv[1]);
-        str += '[-v] [-h host] [-p port] bucket';
-        console.error(str);
-        process.exit(1);
+    var str = 'usage: ' + path.basename(process.argv[1]);
+    str += '[-v] [-h host] [-p port] bucket';
+    console.error(str);
+    process.exit(1);
 }
 
 
 function parseOptions() {
-        var option;
-        var opts = {
-                host: '127.0.0.1',
-                port: 2020,
-        };
-        var parser = new getopt.BasicParser('vh:p:',
-                                            process.argv);
-        var tmp;
+    var option;
+    var opts = {
+        host: '127.0.0.1',
+        port: 2020,
+    };
+    var parser = new getopt.BasicParser('vh:p:',
+                                        process.argv);
+    var tmp;
 
-        if (process.env['MORAY_URL']) {
-                var u = url.parse(process.env['MORAY_URL']);
-                opts.host = u['hostname'] || opts.host;
-                opts.port = parseInt(u['port'], 10) || opts.port;
+    if (process.env['MORAY_URL']) {
+        var u = url.parse(process.env['MORAY_URL']);
+        opts.host = u['hostname'] || opts.host;
+        opts.port = parseInt(u['port'], 10) || opts.port;
+    }
+
+    while ((option = parser.getopt()) !== undefined && !option.error) {
+        switch (option.option) {
+        case 'h':
+            opts.host = option.optarg;
+            break;
+
+        case 'p':
+            opts.port = parseInt(option.optarg, 10);
+            break;
+
+        case 'v':
+            // Allows us to set -vvv -> this little hackery
+            // just ensures that we're never < TRACE
+            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
+            if (LOG.level() <= bunyan.DEBUG)
+                LOG = LOG.child({src: true});
+            break;
+
+        default:
+            process.exit(1);
+            break;
         }
+    }
 
-        while ((option = parser.getopt()) !== undefined && !option.error) {
-                switch (option.option) {
-                case 'h':
-                        opts.host = option.optarg;
-                        break;
+    if (parser.optind() >= process.argv.length)
+        usage('missing required argument: "bucket"');
 
-                case 'p':
-                        opts.port = parseInt(option.optarg, 10);
-                        break;
-
-                case 'v':
-                        // Allows us to set -vvv -> this little hackery
-                        // just ensures that we're never < TRACE
-                        LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-                        if (LOG.level() <= bunyan.DEBUG)
-                                LOG = LOG.child({src: true});
-                        break;
-
-                default:
-                        process.exit(1);
-                        break;
-                }
-        }
-
-        if (parser.optind() >= process.argv.length)
-                usage('missing required argument: "bucket"');
-
-        opts.name = process.argv[parser.optind()];
-        return (opts);
+    opts.name = process.argv[parser.optind()];
+    return (opts);
 }
 
 
@@ -91,17 +91,17 @@ var client;
 var options = parseOptions();
 
 client = moray.createClient({
-        host: options.host,
-        log: LOG,
-        port: options.port
+    host: options.host,
+    log: LOG,
+    port: options.port
 });
 
 client.on('connect', function onConnect() {
-        client.delBucket(options.name, function callback(err) {
-                if (err) {
-                        console.error(err.toString());
-                        process.exit(1);
-                }
-                process.exit(0);
-        });
+    client.delBucket(options.name, function callback(err) {
+        if (err) {
+            console.error(err.toString());
+            process.exit(1);
+        }
+        process.exit(0);
+    });
 });
