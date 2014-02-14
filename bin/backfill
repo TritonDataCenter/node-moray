@@ -29,7 +29,7 @@
 
 var p = console.log;
 var path = require('path');
-var util = require('util'),
+var util = require('util');
 var bunyan = require('bunyan');
 var getopt = require('posix-getopt');
 var ProgressBar = require('progbar').ProgressBar;
@@ -40,7 +40,7 @@ var moray = require('../lib');
 
 ///--- Globals
 
-format = util.format;
+var format = util.format;
 
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
