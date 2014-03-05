@@ -289,6 +289,7 @@ function backfillBucket() {
                 return backfillObjects(PROCESSED, options.limit, processCb);
             } else {
                 bar.end();
+                client.close();
                 console.log('Backfill of %d objects done (in %d seconds)',
                             TOTAL, (Date.now() - START) / 1000);
                 process.exit(0);
