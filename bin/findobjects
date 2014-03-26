@@ -31,7 +31,7 @@ function usage(msg) {
 
     var str = 'usage: ' + path.basename(process.argv[1]);
     str += '[-v] [-H] [-a attr] [-d attr] [-l limit] [-o offset] ' +
-        '[-h host] [-p port] bucket filter';
+        '[-h host] [-p port] [-s] [-n] bucket filter';
     console.error(str);
     process.exit(1);
 }
@@ -44,7 +44,7 @@ function parseOptions() {
         port: 2020,
         sort: {}
     };
-    var parser = new getopt.BasicParser('va:d:Hh:l:o:p:',
+    var parser = new getopt.BasicParser('nsva:d:Hh:l:o:p:',
                                         process.argv);
     var tmp;
 
@@ -78,12 +78,20 @@ function parseOptions() {
             opts.limit = parseInt(option.optarg, 10);
             break;
 
+        case 'n':
+            opts.no_count = true;
+            break;
+
         case 'o':
             opts.offset = parseInt(option.optarg, 10);
             break;
 
         case 'p':
             opts.port = parseInt(option.optarg, 10);
+            break;
+
+        case 's':
+            opts.sql_only = true;
             break;
 
         case 'v':
@@ -130,8 +138,10 @@ client.on('connect', function onConnect() {
                                  options.filter,
                                  {
                                      limit: options.limit,
+                                     no_count: options.no_count,
                                      offset: options.offset,
-                                     sort: options.sort
+                                     sort: options.sort,
+                                     sql_only: options.sql_only
                                  });
     req.on('error', function (err) {
         console.error(err.message);
