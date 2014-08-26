@@ -27,5 +27,6 @@
     },
     "devDependencies": {
         "nodeunit": "0.8.1"
-    }
+    },
+    "license": "MPL-2.0"
 }

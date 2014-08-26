@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // -*- mode: js -*-
 /**
- * vim: set filetype=javascript :
  *
  * Copyright (c) 2013, Joyent, Inc. All rights reserved.
  *
