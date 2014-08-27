@@ -79,12 +79,10 @@ function parseOptions() {
 
     if (parser.optind() >= process.argv.length)
         usage('missing required arguments: "bucket"');
-    if ((parser.optind() + 1) >= process.argv.length)
-        usage('missing required arguments: "key"');
 
     var tmp = process.argv.slice(parser.optind());
     opts.bucket = tmp[0];
-    opts.count = parseInt(tmp[1], 10);
+    opts.count = parseInt(tmp[1], 10) | 100;
 
     return (opts);
 }
