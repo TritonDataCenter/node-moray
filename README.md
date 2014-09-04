@@ -8,16 +8,14 @@
     Copyright (c) 2014, Joyent, Inc.
 -->
 
-# Moray (node.js client SDK)
+# node-moray
 
-Repository: <git@git.joyent.com:node-moray.git>
-Browsing: <https://mo.joyent.com/node-moray>
-Who: Mark Cavage
-Docs: <https://mo.joyent.com/docs/moray>
-Tickets/bugs: <https://devhub.joyent.com/jira/browse/MANTA>
+This repository is part of the Joyent Manta and SmartDataCenter (SDC) projects.
+For  contribution guidelines, issues, and general documentation, visit the main
+[SDC](http://github.com/joyent/sdc) and [Manta](http://github.com/joyent/manta)
+project pages.
 
-
-# Overview
+## Overview
 
 This is the (node.js) client SDK for [Moray](https://mo.joyent.com/docs/moray).
 For usage information, visit the Moray docs.
