@@ -38,7 +38,7 @@ function usage(msg) {
         console.error(msg);
 
     var str = 'usage: ' + path.basename(process.argv[1]);
-    str += '[-v] [-h host] [-p port] [-d data] bucket key';
+    str += '[-v] [-e etag] [-h host] [-p port] [-d data] bucket key';
     console.error(str);
     process.exit(1);
 }
@@ -51,7 +51,7 @@ function parseOptions() {
         port: 2020,
         index: {}
     };
-    var parser = new getopt.BasicParser('vh:p:d:',
+    var parser = new getopt.BasicParser('ve:h:p:d:',
                                         process.argv);
     var tmp;
 
@@ -63,6 +63,10 @@ function parseOptions() {
 
     while ((option = parser.getopt()) !== undefined && !option.error) {
         switch (option.option) {
+        case 'e':
+            opts.etag = option.optarg;
+            break;
+
         case 'h':
             opts.host = option.optarg;
             break;
@@ -121,6 +125,7 @@ client.on('connect', function onConnect() {
     client.putObject(options.bucket,
                      options.key,
                      options.data || {},
+                     options.etag ? { 'etag': options.etag } : {},
                      function callback(err) {
                          if (err) {
                              console.error(err.message);
