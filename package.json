@@ -12,10 +12,10 @@
     "dependencies": {
         "assert-plus": "0.1.5",
         "backoff": "2.4.0",
-        "bunyan": "^1.3.2",
-        "fast": "git+ssh://git@github.com/mcavage/node-fast.git#806645590ce3ef01ff698ffc5ee4f420cbadfae4",
+        "bunyan": "^1.3.3",
+        "fast": "git+ssh://git@github.com/mcavage/node-fast.git#8ef21b1f35a2bf1df1dc3b270fe70cb23af13c17",
         "native-dns": "0.4.1",
-        "libuuid": "0.1.3",
+        "libuuid": "git://github.com/pfmooney/node-libuuid.git#03dabed56",
         "once": "1.3.0",
         "posix-getopt": "1.0.0",
         "progbar": "0.1.0",
