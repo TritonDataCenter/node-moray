@@ -26,7 +26,8 @@
         "lib": "./lib"
     },
     "devDependencies": {
-        "nodeunit": "0.8.1"
+        "nodeunit": "0.8.1",
+        "vasync": "^1.6.3"
     },
     "license": "MPL-2.0"
 }
