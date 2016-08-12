@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright (c) 2016, Joyent, Inc.
 #
 
 #
@@ -25,13 +25,12 @@
 #
 # Tools
 #
-NODEUNIT		:= ./node_modules/.bin/nodeunit
 NPM			:= npm
 
 #
 # Files
 #
-JS_FILES	:= $(shell find lib test -name '*.js')
+JS_FILES	:= $(shell find lib -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
@@ -45,18 +44,8 @@ include ./tools/mk/Makefile.smf.defs
 # Repo-specific targets
 #
 .PHONY: all
-all: $(NODEUNIT) $(REPO_DEPS)
+all: $(REPO_DEPS)
 	$(NPM) rebuild
-
-$(NODEUNIT): | $(NPM_EXEC)
-	$(NPM) install
-
-CLEAN_FILES += $(NODEUNIT) ./node_modules/nodeunit
-
-.PHONY: test
-test: $(NODEUNIT)
-	echo "write some tests"
-	#$(NODEUNIT) test/*.test.js
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.targ

@@ -26,11 +26,5 @@ For usage information, visit the Moray docs.
 
 # Testing
 
-To test this Moray client:
-
-- Clone the Moray server repo.
-- Use "make" to build the Moray server repo.
-- Use "npm ln" to link your client repo into the server repo for the "moray"
-  dependency (e.g., "cd /path/to/server/repo; npm ln /path/to/client/repo").
-- Follow the instructions in the Moray server repo to test it.  Since it's using
-  your client, this will exercise the test suite using your client.
+To test this Moray client, see the separate
+[moray-test-suite](https://github.com/joyent/moray-test-suite) repository.
