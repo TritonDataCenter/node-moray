@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2016, Joyent, Inc.
  */
 
 var path = require('path');
@@ -39,7 +39,7 @@ function usage(msg) {
         console.error(msg);
 
     var str = 'usage: ' + path.basename(process.argv[1]);
-    str += '[-v] [-h host] [-p port] statement';
+    str += '[-v] [-h host] [-p port]';
     console.error(str);
     process.exit(1);
 }
@@ -52,7 +52,6 @@ function parseOptions() {
         port: 2020
     };
     var parser = new getopt.BasicParser('vh:p:', process.argv);
-    var tmp;
 
     if (process.env['MORAY_URL']) {
         var u = url.parse(process.env['MORAY_URL']);
@@ -79,16 +78,10 @@ function parseOptions() {
             break;
 
         default:
-            usage('invalid option: ' + option.option);
+            process.exit(1);
             break;
         }
     }
-
-    if (parser.optind() >= process.argv.length)
-        usage('missing required arguments: "statement"');
-
-    tmp = process.argv.slice(parser.optind());
-    opts.statement = tmp[0];
 
     return (opts);
 }
@@ -109,19 +102,13 @@ client = moray.createClient({
 });
 
 client.on('connect', function onConnect() {
-    var req = client.sql(options.statement);
+    client.getTokens(function callback(err, b) {
+        if (err) {
+            console.error(err.message);
+            process.exit(1);
+        }
 
-    req.once('error', function (err) {
-        console.error(err.message);
-        process.exit(1);
-    });
-
-    req.on('record', function (obj) {
-        if (typeof (obj) === 'object' && obj !== null)
-            console.log(JSON.stringify(obj, null, 2));
-    });
-
-    req.once('end', function () {
+        console.log(JSON.stringify(b, null, 2));
         client.close();
     });
 });

@@ -30,6 +30,7 @@ var p = console.log;
 var path = require('path');
 var util = require('util');
 var bunyan = require('bunyan');
+var cmdutil = require('cmdutil');
 var getopt = require('posix-getopt');
 var ProgressBar = require('progbar').ProgressBar;
 
@@ -43,7 +44,7 @@ var format = util.format;
 
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'info'),
+    level: (process.env.LOG_LEVEL || 'fatal'),
     stream: process.stderr,
     serializers: bunyan.stdSerializers
 });
@@ -65,7 +66,8 @@ function usage(msg) {
 
     var str = 'usage: ' + path.basename(process.argv[1]);
     // "limit" here is really batch size.
-    str += ' [-v] [-h host] [-p port] [-i index] [-l batch-size] [-P predicate] bucket';
+    str += ' [-v] [-h host] [-p port] [-i index] [-l batch-size] ' +
+        '[-P predicate] bucket';
     console.error(str);
     process.exit(1);
 }
@@ -144,33 +146,39 @@ var options = parseOptions();
 
 function backfillBucket() {
     var client = moray.createClient({
+        mustCloseBeforeNormalProcessExit: true,
+        failFast: true,
         host: options.host,
         log: LOG,
         port: options.port
     });
-    var cfg = options.config || {
-        options: options.options
-    };
     var bar;
 
+    client.on('error', cmdutil.fail);
     client.on('connect', function onConnect() {
         var pred;
         function getPredicate(cb) {
             client.getBucket(options.name, function (err, bucket) {
-                if (err) return cb(err);
+                if (err) {
+                    cb(err);
+                    return;
+                }
                 var ary = [];
                 options.indexes.forEach(function (i) {
                     ary.push('\'%' + i + '%\'');
                 });
-                pred = 'from ' + options.name + ' where _value like any (array[' +
-                    ary.join(',') + '])';
+                pred = 'from ' + options.name +
+                    ' where _value like any (array[' + ary.join(',') + '])';
                 Object.keys(options.predicates).forEach(function (field) {
-                    var isArray = bucket.index[field] && bucket.index[field].type[0] == '[';
+                    var isArray = bucket.index[field] &&
+                        bucket.index[field].type[0] == '[';
                     var values = options.predicates[field];
                     if (isArray) {
-                        pred += format(' and %s in (array[\'%s\'])', field, values.join("'], array['"));
+                        pred += format(' and %s in (array[\'%s\'])', field,
+                            values.join('\'], array[\''));
                     } else {
-                        pred += format(' and %s in (\'%s\')', field, values.join("', '"));
+                        pred += format(' and %s in (\'%s\')', field,
+                            values.join('\', \''));
                     }
                 });
                 cb(null, pred);
@@ -186,7 +194,7 @@ function backfillBucket() {
 
                 countReq.once('error', function (err) {
                     console.error(err.message);
-                    return cb(err);
+                    return (cb(err));
                 });
 
                 countReq.on('record', function (obj) {
@@ -201,11 +209,9 @@ function backfillBucket() {
                     }
                 });
 
-                countReq.once('end', function () {
-                    return cb();
-                });
+                countReq.once('end', cb);
             } else {
-                return cb();
+                cb();
             }
         }
 
@@ -215,9 +221,9 @@ function backfillBucket() {
 
             function wait() {
                 if (done === limit || TOTAL === PROCESSED) {
-                    return cb();
+                    return (cb());
                 } else {
-                    return setTimeout(wait, 1000);
+                    return (setTimeout(wait, 1000));
                 }
             }
 
@@ -228,7 +234,7 @@ function backfillBucket() {
 
             req.once('error', function (err) {
                 console.error(err.message);
-                return cb(err);
+                return (cb(err));
             });
 
             req.on('record', function (obj) {
@@ -244,8 +250,8 @@ function backfillBucket() {
                     for (var i = 0; i < options.indexes.length; i++) {
                         // XXX Not sure about a UFDS field with multiple values.
                         var idx = options.indexes[i];
-                        if (data.hasOwnProperty(idx)
-                            && String(data[idx]) !== _2update[key][idx]) {
+                        if (data.hasOwnProperty(idx) &&
+                            String(data[idx]) !== _2update[key][idx]) {
                             skip = false;
                             break;
                         }
@@ -268,7 +274,7 @@ function backfillBucket() {
                         }
                     });
                 });
-                return wait();
+                return (wait());
             });
 
         }
@@ -283,15 +289,13 @@ function backfillBucket() {
                         backfillObjects(PROCESSED, options.limit, processCb);
                     });
                 }
-                return (false);
             } else if (PROCESSED < TOTAL) {
-                return backfillObjects(PROCESSED, options.limit, processCb);
+                backfillObjects(PROCESSED, options.limit, processCb);
             } else {
                 bar.end();
                 client.close();
                 console.log('Backfill of %d objects done (in %d seconds)',
                             TOTAL, (Date.now() - START) / 1000);
-                process.exit(0);
             }
         }
 

@@ -13,6 +13,7 @@ var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
+var cmdutil = require('cmdutil');
 var getopt = require('posix-getopt');
 
 var moray = require('../lib');
@@ -23,7 +24,7 @@ var moray = require('../lib');
 
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'info'),
+    level: (process.env.LOG_LEVEL || 'fatal'),
     stream: process.stderr,
     serializers: bunyan.stdSerializers
 });
@@ -47,11 +48,9 @@ function parseOptions() {
     var option;
     var opts = {
         host: '127.0.0.1',
-        port: 2020,
+        port: 2020
     };
-    var parser = new getopt.BasicParser('vdh:p:',
-                                        process.argv);
-    var tmp;
+    var parser = new getopt.BasicParser('vdh:p:', process.argv);
 
     if (process.env['MORAY_URL']) {
         var u = url.parse(process.env['MORAY_URL']);
@@ -97,18 +96,23 @@ var client;
 var options = parseOptions();
 
 client = moray.createClient({
+    mustCloseBeforeNormalProcessExit: true,
+    failFast: true,
     host: options.host,
     log: LOG,
     port: options.port
 });
 
 client.on('connect', function onConnect() {
-    client.version({deep: options.deep, log: LOG}, function callback(err, data) {
+    var rqoptions = {deep: options.deep, log: LOG};
+    client.versionInternal(rqoptions, function callback(err, data) {
         if (err) {
             console.error(err.toString());
             process.exit(1);
         }
         console.log(data);
-        process.exit(0);
+        client.close();
     });
 });
+
+client.on('error', cmdutil.fail);

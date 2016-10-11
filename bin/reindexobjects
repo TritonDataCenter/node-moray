@@ -14,6 +14,7 @@ var path = require('path');
 var url = require('url');
 
 var bunyan = require('bunyan');
+var cmdutil = require('cmdutil');
 var getopt = require('posix-getopt');
 var vasync = require('vasync');
 
@@ -26,7 +27,7 @@ var prettyPrint = true;
 
 var LOG = bunyan.createLogger({
     name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'info'),
+    level: (process.env.LOG_LEVEL || 'fatal'),
     stream: process.stderr,
     serializers: bunyan.stdSerializers
 });
@@ -50,10 +51,10 @@ function parseOptions() {
     var option;
     var opts = {
         host: '127.0.0.1',
-        port: 2020,
+        port: 2020
     };
-    var parser = new getopt.BasicParser('vsHh:p:',
-                                        process.argv);
+    var parser = new getopt.BasicParser('vsHh:p:', process.argv);
+
     if (process.env['MORAY_URL']) {
         var u = url.parse(process.env['MORAY_URL']);
         opts.host = u['hostname'] || opts.host;
@@ -102,6 +103,8 @@ var client;
 var options = parseOptions();
 
 client = moray.createClient({
+    mustCloseBeforeNormalProcessExit: true,
+    failFast: true,
     host: options.host,
     log: LOG,
     port: options.port
@@ -117,6 +120,7 @@ client.on('connect', function onConnect() {
             if (!bucket.reindex_active ||
                 Object.keys(bucket.reindex_active).length === 0) {
                 // reindexing not require (or already complete)
+                client.close();
                 process.exit(0);
             }
             cb();
@@ -143,9 +147,9 @@ client.on('connect', function onConnect() {
             console.error(err.message);
             process.exit(1);
         }
-        reindexLoop(function (err) {
-            if (err) {
-                console.error(err.message);
+        reindexLoop(function (err2) {
+            if (err2) {
+                console.error(err2.message);
                 process.exit(1);
             }
             client.once('close', process.exit.bind(process, 0));
@@ -153,3 +157,5 @@ client.on('connect', function onConnect() {
         });
     });
 });
+
+client.on('error', cmdutil.fail);

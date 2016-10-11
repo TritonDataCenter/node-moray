@@ -20,7 +20,7 @@ project pages. *Do not use GitHub PRs*.
 
 ## Overview
 
-This is the (node.js) client SDK for [Moray](https://mo.joyent.com/docs/moray).
+This is the (node.js) client SDK for [Moray](https://github.com/joyent/moray).
 For usage information, visit the Moray docs.
 
 
