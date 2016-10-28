@@ -3,6 +3,7 @@
     "description": "Moray client library",
     "version": "2.0.0",
     "author": "Joyent (joyent.com)",
+    "keywords": [ "moray" ],
     "main": "./lib/index.js",
     "repository": {
         "type": "git",

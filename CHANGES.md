@@ -21,6 +21,10 @@ networking failures.
   updated to use
   [VError.findCauseByName](https://github.com/joyent/node-verror#verrorfindcausebynameerr-name)
   instead of checking the `name` property directly.**
+* `retry.retries` must now be a finite number. Once the number of retries has
+  been exceeded for a backend, the "cueball" module will consider that backend
+  dead, and will take care of periodically checking it to see if it's returned.
+  The recommended and default value is `5`.
 
 **Other changes:**
 
