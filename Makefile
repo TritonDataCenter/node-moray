@@ -25,6 +25,7 @@
 #
 # Tools
 #
+SHELL=bash
 NODE			:= node
 NPM			:= npm
 
