@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.0.1
+
+* [MORAY-377](http://smartos.org/bugview/MORAY-377) moray client masks callers'
+  failing to add "error" listeners
+
 ## v2.0.0
 
 This is a major rewrite of the guts of this module, primarily to improve
