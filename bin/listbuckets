@@ -7,105 +7,37 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
-var path = require('path');
-var url = require('url');
-
-var bunyan = require('bunyan');
 var cmdutil = require('cmdutil');
-var getopt = require('posix-getopt');
-
 var moray = require('../lib');
+var moraycli = require('../lib/cmd');
 
+var clientOptions, parser, client;
+var bucket, key;
 
-
-///--- Globals
-
-var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'fatal'),
-    stream: process.stderr,
-    serializers: bunyan.stdSerializers
+cmdutil.configure({
+    'usageMessage': 'fetch all bucket information from Moray',
+    'synopses': [ moraycli.commonUsage ]
 });
 
-
-
-///--- Functions
-
-function usage(msg) {
-    if (msg)
-        console.error(msg);
-
-    var str = 'usage: ' + path.basename(process.argv[1]);
-    str += '[-v] [-h host] [-p port]';
-    console.error(str);
-    process.exit(1);
-}
-
-
-function parseOptions() {
-    var option;
-    var opts = {
-        host: '127.0.0.1',
-        port: 2020
-    };
-    var parser = new getopt.BasicParser('vh:p:', process.argv);
-
-    if (process.env['MORAY_URL']) {
-        var u = url.parse(process.env['MORAY_URL']);
-        opts.host = u['hostname'] || opts.host;
-        opts.port = parseInt(u['port'], 10) || opts.port;
-    }
-
-    while ((option = parser.getopt()) !== undefined && !option.error) {
-        switch (option.option) {
-        case 'h':
-            opts.host = option.optarg;
-            break;
-
-        case 'p':
-            opts.port = parseInt(option.optarg, 10);
-            break;
-
-        case 'v':
-            // Allows us to set -vvv -> this little hackery
-            // just ensures that we're never < TRACE
-            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-            if (LOG.level() <= bunyan.DEBUG)
-                LOG = LOG.child({src: true});
-            break;
-
-        default:
-            process.exit(1);
-            break;
-        }
-    }
-
-    return (opts);
-}
-
-
-
-///--- Mainline
-
-var client;
-var options = parseOptions();
-
-client = moray.createClient({
-    mustCloseBeforeNormalProcessExit: true,
-    failFast: true,
-    host: options.host,
-    log: LOG,
-    port: options.port
+clientOptions = {};
+parser = moraycli.parseCliOptions({
+    'argv': process.argv,
+    'env': process.env,
+    'errstream': process.stderr,
+    'extraOptStr': '',
+    'clientOptions': clientOptions,
+    'onUsage': cmdutil.usage
 });
 
+client = moray.createClient(clientOptions);
+client.on('error', cmdutil.fail);
 client.on('connect', function onConnect() {
     client.listBuckets(function callback(err, b) {
         if (err) {
-            console.error(err.message);
-            process.exit(1);
+            cmdutil.fail(err);
         }
 
         b.pre = (b.pre || []).map(function (f) {
@@ -119,5 +51,3 @@ client.on('connect', function onConnect() {
         client.close();
     });
 });
-
-client.on('error', cmdutil.fail);

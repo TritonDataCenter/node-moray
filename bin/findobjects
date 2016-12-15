@@ -7,156 +7,103 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
-var path = require('path');
-var url = require('url');
-
-var bunyan = require('bunyan');
 var cmdutil = require('cmdutil');
-var getopt = require('posix-getopt');
-
 var moray = require('../lib');
+var moraycli = require('../lib/cmd');
+
+var clientOptions, parser, client;
+var findOptions, bucket, filter, p;
 var prettyPrint = true;
 
-
-///--- Globals
-
-var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'fatal'),
-    stream: process.stderr,
-    serializers: bunyan.stdSerializers
+cmdutil.configure({
+    'usageMessage': 'fetch objects from Moray matching a filter',
+    'synopses': [
+        moraycli.commonUsage + '[-Hns] [-a attr] [-d attr] [-l limit] ' +
+            '[-o offset] BUCKET FILTER'
+    ]
 });
 
-
-
-///--- Functions
-
-function usage(msg) {
-    if (msg)
-        console.error(msg);
-
-    var str = 'usage: ' + path.basename(process.argv[1]);
-    str += '[-v] [-H] [-a attr] [-d attr] [-l limit] [-o offset] ' +
-        '[-h host] [-p port] [-s] [-n] bucket filter';
-    console.error(str);
-    process.exit(1);
-}
-
-
-function parseOptions() {
-    var option;
-    var opts = {
-        host: '127.0.0.1',
-        port: 2020,
-        sort: {}
-    };
-    var parser = new getopt.BasicParser('nsva:d:Hh:l:o:p:', process.argv);
-    var tmp;
-
-    if (process.env['MORAY_URL']) {
-        var u = url.parse(process.env['MORAY_URL']);
-        opts.host = u['hostname'] || opts.host;
-        opts.port = parseInt(u['port'], 10) || opts.port;
-    }
-
-    while ((option = parser.getopt()) !== undefined && !option.error) {
+clientOptions = {};
+findOptions = {};
+parser = moraycli.parseCliOptions({
+    'argv': process.argv,
+    'env': process.env,
+    'errstream': process.stderr,
+    'extraOptStr': 'a:d:Hl:no:s',
+    'clientOptions': clientOptions,
+    'onUsage': cmdutil.usage,
+    'onOption': function (option) {
         switch (option.option) {
         case 'a':
-            opts.sort.attribute = option.optarg;
-            opts.sort.order = 'ASC';
+            findOptions.sort = {
+                'order': 'ASC',
+                'attribute': option.optarg
+            };
             break;
 
         case 'd':
-            opts.sort.attribute = option.optarg;
-            opts.sort.order = 'DESC';
+            findOptions.sort = {
+                'order': 'DESC',
+                'attribute': option.optarg
+            };
             break;
 
         case 'H':
             prettyPrint = false;
             break;
 
-        case 'h':
-            opts.host = option.optarg;
-            break;
-
         case 'l':
-            opts.limit = parseInt(option.optarg, 10);
+            p = parseInt(option.optarg, 10);
+            if (isNaN(p) || p < 0) {
+                cmdutil.usage('unsupported value for -l: "%s"', option.optarg);
+            }
+            findOptions.limit = p;
             break;
 
         case 'n':
-            opts.no_count = true;
+            findOptions.no_count = true;
             break;
 
         case 'o':
-            opts.offset = parseInt(option.optarg, 10);
-            break;
-
-        case 'p':
-            opts.port = parseInt(option.optarg, 10);
+            p = parseInt(option.optarg, 10);
+            if (isNaN(p) || p < 0) {
+                cmdutil.usage('unsupported value for -o / --offset: "%s"',
+                    option.optarg);
+            }
+            findOptions.offset = p;
             break;
 
         case 's':
-            opts.sql_only = true;
-            break;
-
-        case 'v':
-            // Allows us to set -vvv -> this little hackery
-            // just ensures that we're never < TRACE
-            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-            if (LOG.level() <= bunyan.DEBUG)
-                LOG = LOG.child({src: true});
+            findOptions.sql_only = true;
             break;
 
         default:
-            process.exit(1);
+            cmdutil.usage();
             break;
         }
     }
-
-    if (parser.optind() >= process.argv.length)
-        usage('missing required arguments: "bucket"');
-    if ((parser.optind() + 1) >= process.argv.length)
-        usage('missing required arguments: "filter"');
-
-    tmp = process.argv.slice(parser.optind());
-    opts.bucket = tmp[0];
-    opts.filter = tmp[1];
-
-    return (opts);
-}
-
-
-
-///--- Mainline
-
-var client;
-var options = parseOptions();
-
-client = moray.createClient({
-    mustCloseBeforeNormalProcessExit: true,
-    failFast: true,
-    host: options.host,
-    log: LOG,
-    port: options.port
 });
 
+if (parser.optind() >= process.argv.length)
+    cmdutil.usage('missing required arguments: "bucket"');
+bucket = process.argv[parser.optind()];
+
+if ((parser.optind() + 1) >= process.argv.length)
+    cmdutil.usage('missing required arguments: "filter"');
+filter = process.argv[parser.optind() + 1];
+
+client = moray.createClient(clientOptions);
+client.on('error', cmdutil.fail);
 client.on('connect', function onConnect() {
-    var req = client.findObjects(options.bucket,
-                                 options.filter,
-                                 {
-                                     limit: options.limit,
-                                     no_count: options.no_count,
-                                     offset: options.offset,
-                                     sort: options.sort,
-                                     sql_only: options.sql_only
-                                 });
-    req.on('error', function (err) {
-        console.error(err.message);
-        process.exit(1);
-    });
+    var req;
+
+    req = client.findObjects(bucket, filter, findOptions);
+
+    req.on('error', cmdutil.fail);
+
     req.on('record', function (obj) {
         if (prettyPrint)
             console.log(JSON.stringify(obj, null, 2));
@@ -168,5 +115,3 @@ client.on('connect', function onConnect() {
         client.close();
     });
 });
-
-client.on('error', cmdutil.fail);

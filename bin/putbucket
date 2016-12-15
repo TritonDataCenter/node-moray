@@ -7,182 +7,134 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
-var path = require('path');
-var url = require('url');
-
-var bunyan = require('bunyan');
 var cmdutil = require('cmdutil');
-var getopt = require('posix-getopt');
-
 var moray = require('../lib');
+var moraycli = require('../lib/cmd');
 
+var clientOptions, parser, client;
+var bucket, putOptions, v;
+var useStdin = false;
 
+/*
+ * Reads the bucket configuration from stdin and invokes "next" upon completion.
+ * Failure will abort the program with an appropriate message.
+ */
+function readFromStdin(next) {
+    var config;
 
-///--- Globals
-
-var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'fatal'),
-    stream: process.stderr,
-    serializers: bunyan.stdSerializers
-});
-
-
-
-///--- Functions
-
-function usage(msg) {
-    if (msg)
-        console.error(msg);
-
-    var str = 'usage: ' + path.basename(process.argv[1]);
-    str += '[-v] [-h host] [-p port] [-i index] [-u index] [-s] name\n';
-    str += 'indexes are of the form "name:type"';
-    console.error(str);
-    process.exit(1);
-}
-
-
-function parseOptions() {
-    var option;
-    var opts = {
-        host: '127.0.0.1',
-        port: 2020,
-        index: {},
-        options: {}
-    };
-    var parser = new getopt.BasicParser('svti:h:p:u:x:', process.argv);
-    var tmp;
-
-    if (process.env['MORAY_URL']) {
-        var u = url.parse(process.env['MORAY_URL']);
-        opts.host = u['hostname'] || opts.host;
-        opts.port = parseInt(u['port'], 10) || opts.port;
-    }
-
-    while ((option = parser.getopt()) !== undefined && !option.error) {
-        switch (option.option) {
-        case 'h':
-            opts.host = option.optarg;
-            break;
-
-        case 'i':
-            tmp = option.optarg.split(':');
-            opts.index[tmp[0]] = {
-                type: tmp[1] || 'string',
-                unique: false
-            };
-            break;
-
-        case 'n':
-            opts.name = option.optarg;
-            break;
-
-        case 'p':
-            opts.port = parseInt(option.optarg, 10);
-            break;
-
-        case 's':
-            opts.stdin = true;
-            break;
-
-        case 't':
-            opts.options.trackModification = true;
-            break;
-
-        case 'u':
-            tmp = option.optarg.split(':');
-            opts.index[tmp[0]] = {
-                type: tmp[1] || 'string',
-                unique: true
-            };
-            break;
-
-        case 'v':
-            // Allows us to set -vvv -> this little hackery
-            // just ensures that we're never < TRACE
-            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-            if (LOG.level() <= bunyan.DEBUG)
-                LOG = LOG.child({src: true});
-            break;
-
-        case 'x':
-            opts.options.version = parseInt(option.optarg, 10);
-            break;
-
-        default:
-            process.exit(1);
-            break;
-        }
-    }
-
-    if (parser.optind() >= process.argv.length)
-        usage('missing required argument: "name"');
-    tmp = process.argv.slice(parser.optind());
-    opts.name = tmp[0];
-
-    if (opts.stdin) {
-        opts.config = '';
-        process.stdin.setEncoding('utf8');
-        process.stdin.resume();
-        process.stdin.on('data', function (chunk) {
-            opts.config += chunk;
-        });
-
-        process.stdin.on('end', function () {
-            function evalFn(f) {
-                var fn;
-                fn = eval('fn = ' + f);
-                return (fn);
-            }
-            opts.config = JSON.parse(opts.config);
-            opts.config.pre = (opts.config.pre || []).map(evalFn);
-            opts.config.post = (opts.config.post || []).map(evalFn);
-        });
-    }
-
-    return (opts);
-}
-
-
-
-function putBucket() {
-    var client = moray.createClient({
-        mustCloseBeforeNormalProcessExit: true,
-        failFast: true,
-        host: options.host,
-        log: LOG,
-        port: options.port
+    config = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.resume();
+    process.stdin.on('data', function (chunk) {
+        config += chunk;
     });
-    var cfg = options.config || {
-        index: options.index,
-        options: options.options
-    };
+
+    process.stdin.on('end', function () {
+        function evalFn(f) {
+            var fn;
+            fn = eval('fn = ' + f);
+            return (fn);
+        }
+
+        config = JSON.parse(config);
+        config.pre = (config.pre || []).map(evalFn);
+        config.post = (config.post || []).map(evalFn);
+        putOptions = config;
+        next();
+    });
+}
+
+/*
+ * Executes the body of this command: connects to Moray and invokes putBucket().
+ */
+function putBucket() {
+    client = moray.createClient(clientOptions);
+    client.on('error', cmdutil.fail);
     client.on('connect', function onConnect() {
-        client.putBucket(options.name, cfg, function callback(err) {
+        client.putBucket(bucket, putOptions, function callback(err) {
             if (err) {
-                console.error(err.message);
-                process.exit(1);
+                cmdutil.fail(err);
             }
             client.close();
         });
     });
-
-    client.on('error', cmdutil.fail);
 }
 
+/*
+ * Parse (and apply) the "-i" or "-u" command-line option.
+ */
+function addIndex(indexObj, arg, unique) {
+    var tmp;
 
+    tmp = arg.split(':', 2);
+    indexObj[tmp[0]] = {
+        type: tmp[1] || 'string',
+        unique: unique
+    };
+}
 
-///--- Mainline
+cmdutil.configure({
+    'usageMessage': 'create or update a Moray bucket',
+    'synopses': [ [
+        moraycli.commonUsage, '[-i field:type ...]', '[-u field:type ...]',
+        '[-x version]', '[-st]', 'BUCKET'
+    ].join(' ') ]
+});
 
-var options = parseOptions();
-if (options.stdin) {
-    process.stdin.on('end', function () {
-        process.nextTick(putBucket);
-    });
+clientOptions = {};
+putOptions = {
+    'index': {},
+    'options': {}
+};
+parser = moraycli.parseCliOptions({
+    'argv': process.argv,
+    'env': process.env,
+    'errstream': process.stderr,
+    'extraOptStr': 'i:stu:x:',
+    'clientOptions': clientOptions,
+    'onUsage': cmdutil.usage,
+    'onOption': function (option) {
+        switch (option.option) {
+        case 'i':
+            addIndex(putOptions.index, option.optarg, false);
+            break;
+
+        case 's':
+            useStdin = true;
+            break;
+
+        case 't':
+            putOptions.options.trackModification = true;
+            break;
+
+        case 'u':
+            addIndex(putOptions.index, option.optarg, true);
+            break;
+
+        case 'x':
+            v = parseInt(option.optarg, 10);
+            if (isNaN(v) || v < 0) {
+                cmdutil.usage('unsupported value for -x: "%s"', option.optarg);
+            }
+            putOptions.options.version = v;
+            break;
+
+        default:
+            cmdutil.usage();
+            break;
+        }
+    }
+});
+
+if (parser.optind() >= process.argv.length)
+    cmdutil.usage('missing required argument: "bucket"');
+bucket = process.argv[parser.optind()];
+
+if (useStdin) {
+    readFromStdin(putBucket);
 } else {
     putBucket();
 }

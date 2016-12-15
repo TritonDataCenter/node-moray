@@ -7,128 +7,70 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
-var path = require('path');
-var url = require('url');
-
-var bunyan = require('bunyan');
 var cmdutil = require('cmdutil');
-var getopt = require('posix-getopt');
-
 var moray = require('../lib');
+var moraycli = require('../lib/cmd');
+var VError = require('verror');
 
+var clientOptions, parser, client;
+var bucket, key, value, putOptions;
 
-
-///--- Globals
-
-var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'fatal'),
-    stream: process.stderr,
-    serializers: bunyan.stdSerializers
+cmdutil.configure({
+    'usageMessage': 'create or update an object in Moray',
+    'synopses': [ moraycli.commonUsage + ' [-d DATA] [-e ETAG] ' +
+        'BUCKET KEY' ]
 });
 
-
-
-///--- Functions
-
-function usage(msg) {
-    if (msg)
-        console.error(msg);
-
-    var str = 'usage: ' + path.basename(process.argv[1]);
-    str += '[-v] [-e etag] [-h host] [-p port] [-d data] bucket key';
-    console.error(str);
-    process.exit(1);
-}
-
-
-function parseOptions() {
-    var option;
-    var opts = {
-        host: '127.0.0.1',
-        port: 2020
-    };
-    var parser = new getopt.BasicParser('ve:h:p:d:', process.argv);
-    var tmp;
-
-    if (process.env['MORAY_URL']) {
-        var u = url.parse(process.env['MORAY_URL']);
-        opts.host = u['hostname'] || opts.host;
-        opts.port = parseInt(u['port'], 10) || opts.port;
-    }
-
-    while ((option = parser.getopt()) !== undefined && !option.error) {
+clientOptions = {};
+putOptions = {};
+value = {};
+parser = moraycli.parseCliOptions({
+    'argv': process.argv,
+    'env': process.env,
+    'errstream': process.stderr,
+    'extraOptStr': 'd:e:',
+    'clientOptions': clientOptions,
+    'onUsage': cmdutil.usage,
+    'onOption': function (option) {
         switch (option.option) {
-        case 'e':
-            opts.etag = option.optarg;
-            break;
-
-        case 'h':
-            opts.host = option.optarg;
-            break;
-
         case 'd':
-            opts.data = JSON.parse(option.optarg);
+            try {
+                value = JSON.parse(option.optarg);
+            } catch (ex) {
+                cmdutil.fail(new VError(ex, 'parsing value for -d'));
+            }
             break;
 
-        case 'p':
-            opts.port = parseInt(option.optarg, 10);
-            break;
-
-        case 'v':
-            // Allows us to set -vvv -> this little hackery
-            // just ensures that we're never < TRACE
-            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-            if (LOG.level() <= bunyan.DEBUG)
-                LOG = LOG.child({src: true});
+        case 'e':
+            putOptions.etag = option.optarg;
             break;
 
         default:
-            process.exit(1);
+            cmdutil.usage();
             break;
         }
     }
-
-    if (parser.optind() >= process.argv.length)
-        usage('missing required arguments: "bucket"');
-    if ((parser.optind() + 1) >= process.argv.length)
-        usage('missing required arguments: "key"');
-
-    tmp = process.argv.slice(parser.optind());
-    opts.bucket = tmp[0];
-    opts.key = tmp[1];
-
-    return (opts);
-}
-
-
-
-///--- Mainline
-
-var client;
-var options = parseOptions();
-
-client = moray.createClient({
-    mustCloseBeforeNormalProcessExit: true,
-    failFast: true,
-    host: options.host,
-    log: LOG,
-    port: options.port
 });
 
-client.on('connect', function onConnect() {
-    client.putObject(options.bucket, options.key, options.data || {},
-        options.etag ? { 'etag': options.etag } : {}, function callback(err) {
-            if (err) {
-                console.error(err.message);
-                process.exit(1);
-            }
+if (parser.optind() >= process.argv.length)
+    cmdutil.usage('missing required arguments: "bucket"');
+bucket = process.argv[parser.optind()];
 
-            client.close();
-        });
-});
+if ((parser.optind() + 1) >= process.argv.length)
+    cmdutil.usage('missing required arguments: "key"');
+key = process.argv[parser.optind() + 1];
 
+client = moray.createClient(clientOptions);
 client.on('error', cmdutil.fail);
+client.on('connect', function onConnect() {
+    client.putObject(bucket, key, value, putOptions, function callback(err) {
+        if (err) {
+            cmdutil.fail(err);
+        }
+
+        client.close();
+    });
+});

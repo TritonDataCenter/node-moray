@@ -7,155 +7,83 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
-var path = require('path');
-var url = require('url');
-
-var bunyan = require('bunyan');
 var cmdutil = require('cmdutil');
-var getopt = require('posix-getopt');
-var vasync = require('vasync');
-
 var moray = require('../lib');
+var moraycli = require('../lib/cmd');
 
-var prettyPrint = true;
+var clientOptions, parser, client;
+var bucket, count;
 
-
-///--- Globals
-
-var LOG = bunyan.createLogger({
-    name: path.basename(process.argv[1]),
-    level: (process.env.LOG_LEVEL || 'fatal'),
-    stream: process.stderr,
-    serializers: bunyan.stdSerializers
+cmdutil.configure({
+    'usageMessage': 'reindex objects in a Moray bucket',
+    'synopses': [ moraycli.commonUsage + ' BUCKET [COUNT]' ]
 });
 
-
-
-///--- Functions
-
-function usage(msg) {
-    if (msg)
-        console.error(msg);
-
-    var str = 'usage: ' + path.basename(process.argv[1]);
-    str += '[-v] [-s] [-H] [-h host] [-p port] bucket [count]';
-    console.error(str);
-    process.exit(1);
-}
-
-
-function parseOptions() {
-    var option;
-    var opts = {
-        host: '127.0.0.1',
-        port: 2020
-    };
-    var parser = new getopt.BasicParser('vsHh:p:', process.argv);
-
-    if (process.env['MORAY_URL']) {
-        var u = url.parse(process.env['MORAY_URL']);
-        opts.host = u['hostname'] || opts.host;
-        opts.port = parseInt(u['port'], 10) || opts.port;
-    }
-
-    while ((option = parser.getopt()) !== undefined && !option.error) {
-        switch (option.option) {
-        case 'h':
-            opts.host = option.optarg;
-            break;
-
-        case 'p':
-            opts.port = parseInt(option.optarg, 10);
-            break;
-
-        case 'v':
-            // Allows us to set -vvv -> this little hackery
-            // just ensures that we're never < TRACE
-            LOG.level(Math.max(bunyan.TRACE, (LOG.level() - 10)));
-            if (LOG.level() <= bunyan.DEBUG)
-                LOG = LOG.child({src: true});
-            break;
-
-        default:
-            process.exit(1);
-            break;
-        }
-    }
-
-    if (parser.optind() >= process.argv.length)
-        usage('missing required arguments: "bucket"');
-
-    var tmp = process.argv.slice(parser.optind());
-    opts.bucket = tmp[0];
-    opts.count = parseInt(tmp[1], 10) | 100;
-
-    return (opts);
-}
-
-
-
-///--- Mainline
-
-var client;
-var options = parseOptions();
-
-client = moray.createClient({
-    mustCloseBeforeNormalProcessExit: true,
-    failFast: true,
-    host: options.host,
-    log: LOG,
-    port: options.port
+clientOptions = {};
+count = 100;
+parser = moraycli.parseCliOptions({
+    'argv': process.argv,
+    'env': process.env,
+    'errstream': process.stderr,
+    'extraOptStr': '',
+    'clientOptions': clientOptions,
+    'onUsage': cmdutil.usage
 });
 
+if (parser.optind() >= process.argv.length)
+    cmdutil.usage('missing required arguments: "bucket"');
+bucket = process.argv[parser.optind()];
+
+if (parser.optind() + 1 < process.argv.length) {
+    count = parseInt(process.argv[parser.optind() + 1], 10);
+    if (isNaN(count) || count <= 0) {
+        cmdutil.usage('unsupported value for COUNT: "%s"',
+            process.argv[parser.optind() + 1]);
+    }
+}
+
+client = moray.createClient(clientOptions);
+client.on('error', cmdutil.fail);
 client.on('connect', function onConnect() {
-    function checkBucket(cb) {
-        client.getBucket(options.bucket, function (err, bucket) {
-            if (err) {
-                cb(err);
-                return;
-            }
-            if (!bucket.reindex_active ||
-                Object.keys(bucket.reindex_active).length === 0) {
-                // reindexing not require (or already complete)
-                client.close();
-                process.exit(0);
-            }
-            cb();
-        });
-    }
-    function reindexLoop(cb) {
-        client.reindexObjects(options.bucket, options.count,
-            function (err, res) {
-            if (err) {
-                cb(err);
-                return;
-            }
-            LOG.info(res, 'reindex');
-            if (res.processed === 0) {
-                cb();
-            } else {
-                process.nextTick(reindexLoop.bind(null, cb));
-            }
-        });
-    }
-
-    checkBucket(function (err) {
+    client.getBucket(bucket, function (err, bucketinfo) {
         if (err) {
-            console.error(err.message);
-            process.exit(1);
+            cmdutil.fail(err);
+            return;
         }
-        reindexLoop(function (err2) {
-            if (err2) {
-                console.error(err2.message);
-                process.exit(1);
-            }
-            client.once('close', process.exit.bind(process, 0));
+
+        if (!bucketinfo.reindex_active ||
+            Object.keys(bucketinfo.reindex_active).length === 0) {
+            console.error('bucket "%s": no reindexing required', bucket);
             client.close();
-        });
+        } else {
+            reindexLoop(function (err2) {
+                if (err2) {
+                    cmdutil.fail(err2);
+                }
+
+                client.close();
+            });
+        }
     });
 });
 
-client.on('error', cmdutil.fail);
+function reindexLoop(cb) {
+    client.reindexObjects(bucket, count, function (err, res) {
+        if (err) {
+            cb(err);
+            return;
+        }
+
+        if (res.processed === 0) {
+            console.error('bucket "%s": all objects processed', bucket);
+            cb();
+        } else {
+            console.error('bucket "%s": %d object%s processed (continuing)',
+                bucket, res.processed, res.processed == 1 ? '' : 's');
+            reindexLoop(cb);
+        }
+    });
+}
