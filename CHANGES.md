@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.1.0
+
+* [MORAY-254](http://smartos.org/bugview/MORAY-254) moray tools need manual
+  pages
+
 ## v3.0.0
 
 * [MORAY-280](http://smartos.org/bugview/MORAY-280) Support SRV records in node-moray

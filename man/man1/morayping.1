@@ -1,0 +1,62 @@
+.TH morayping 1 "January 2017" Moray "Moray Client Tools"
+.SH NAME
+.PP
+morayping \- check if a Moray server is functioning
+.SH SYNOPSIS
+.PP
+\fB\fCmorayping [COMMON_OPTIONS] [\-dF]\fR
+.SH DESCRIPTION
+.PP
+Attempts to determine whether Moray is functioning.  For this command, success
+indicates that Moray is functioning and able to respond to a request.  Failure
+indicates the command could not successfully connect and complete a request.
+.SH OPTIONS
+.TP
+\fB\fC\-d\fR
+Attempt to determine whether Moray has a working connection to its
+underlying data store by making a "deep" ping request instead of a trivial
+request.
+.TP
+\fB\fC\-F\fR
+Block until at least one Moray server is found and a connection is
+established, then execute the ping request.  This is intended to
+programmatically wait for Moray to become available, although if the request
+fails (e.g., because of a network issue), the request is not retried, and in
+this case Moray may still be down.
+.PP
+See \fB\fCmoray(1)\fR for information about the \fB\fCCOMMON_OPTIONS\fR, which control
+the log verbosity and how to locate the remote server.
+.SH ENVIRONMENT
+.PP
+See \fB\fCmoray(1)\fR for information about the \fB\fCLOG_LEVEL\fR, \fB\fCMORAY_SERVICE\fR, and
+\fB\fCMORAY_URL\fR environment variables.
+.SH EXAMPLES
+.PP
+Check whether a Moray server is online:
+.PP
+.RS
+.nf
+$ morayping
+.fi
+.RE
+.PP
+Check whether the target server has working connections to its underlying data
+store:
+.PP
+.RS
+.nf
+$ morayping \-d
+.fi
+.RE
+.PP
+When the remote server is not online, you might get an error like this:
+.PP
+.RS
+.nf
+$ morayping \-h 127.0.0.1
+morayping: moray client "127.0.0.1:2020": failed to establish connection
+.fi
+.RE
+.SH SEE ALSO
+.PP
+\fB\fCmoray(1)\fR

@@ -38,8 +38,12 @@ parser = moraycli.parseCliOptions({
             prettyPrint = false;
             break;
 
+        /*
+         * "-s" used to set noCache to true, but that's already the default, so
+         * this is effectively a no-op.  We accept it and do nothing with it for
+         * backwards compatibility.
+         */
         case 's':
-            getOptions.noCache = true;
             break;
 
         default:

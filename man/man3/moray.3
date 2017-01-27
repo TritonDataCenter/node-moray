@@ -1,0 +1,292 @@
+.TH moray 3 "January 2017" Moray "Moray Client Library"
+.SH NAME
+.PP
+moray \- Node.js client library for Moray
+.SH DESCRIPTION
+.PP
+Moray is a JSON\-based key\-value store.  For an overview of Moray, see
+\fB\fCmoray(1)\fR\&.  This manual page assumes basic familiarity with the services Moray
+provides, how to use them from the command line, and how both SRV\-based service
+discovery and traditional service discovery work from the command line.
+.PP
+The \fB\fCmoray\fR npm package contains a Node.js client library that allows consumers
+to create, update, and delete both buckets and objects.  The package also
+contains a suite of command\-line tools for exercising these interfaces.  When in
+doubt, see the implementation of those tools for examples of using each RPC
+call.
+.SS Creating a client
+.PP
+To interact with Moray, users of the Node library instantiate a Moray client
+object, which requires a bunyan\-style logger.  The simplest invocation, which is
+suitable only for one\-off tools and test programs, would be to connect to Moray
+on localhost:
+.PP
+.RS
+.nf
+var mod_bunyan = require('bunyan');
+var mod_moray = require('moray');
+
+var log = mod_bunyan.createLogger({ name: 'my\-tool', level: 'INFO' });
+
+var client = mod_moray.createClient({
+    log: log,
+    host: '127.0.0.1',
+    port: 2020
+});
+
+client.on('connect', function () {
+    /* Start making RPC calls.  This example lists buckets. */
+    client.listBuckets(function (err, buckets) {
+        if (err) {
+            /* This should be handled more gracefully! */
+            throw (err);
+        }
+
+        console.log(JSON.stringify(buckets));
+
+        /* When finished, be sure to close the client. */
+        client.close();
+    });
+});
+.fi
+.RE
+.PP
+This works for a simple test program, but is not suitable for Triton and Manta
+servers or command\-line tools for a few reasons:
+.RS
+.IP \(bu 2
+This mode does not support SRV\-based service discovery, which is critical for
+increased scalability and improved fault tolerance.  SRV\-based discovery is
+configured by using the \fB\fCsrvDomain\fR property instead of \fB\fChost\fR or \fB\fCport.\fR
+.IP \(bu 2
+This mode does not enable the client to use bootstrap resolvers, which are
+critical for use in mixed DNS environments (e.g., where a combination of
+Triton, Manta, or external namservers may be in use).  Bootstrap resolvers are
+configured using the \fB\fCcueballOptions.resolvers\fR property.
+.IP \(bu 2
+Command\-line tools should generally specify additional parameters to ensure
+that they fail quickly when servers are down rather than retrying
+indefinitely until they are online.  This means specifying \fB\fCfailFast\fR\&.  It's
+also a good idea to specify \fB\fCmustCloseBeforeNormalProcessExit\fR to make sure
+that your tool shuts down cleanly.
+.RE
+.PP
+Here's a general pattern for \fIserver\fP components in Triton and Manta to
+configure the Moray client:
+.PP
+.RS
+.nf
+var mod_jsprim = require('jsprim');
+
+var client, config;
+
+/*
+ * Extract the Moray client configuration block from the server's
+ * configuration file.  Here, we assume that "serverConfig" came from
+ * parsing the server's configuration file.  We also assume that the
+ * Moray configuration property is just called "moray", but some components
+ * (notably Muskie) have multiple clients, and they would use different
+ * property names (e.g., "picker" or "marlin").
+ */
+config = jsprim.deepCopy(serverConfig.moray);
+config.log = log;
+client = mod_moray.createClient(config);
+client.on('connect', function onMorayConnect() {
+    /* start using the client */
+});
+.fi
+.RE
+.PP
+\fIClient\fP components would usually add an \fB\fCerror\fR listener, too:
+.PP
+.RS
+.nf
+/*
+ * Client tools add an error listener.  Servers generally should NOT do this
+ * because they configure the client to retry indefinitely.  Any errors
+ * emitted by the client would be programmer errors.
+ */
+client.on('error', function onError(err) {
+    console.error('moray client error: %s', err.message);
+    process.exit(1);
+});
+.fi
+.RE
+.PP
+In practice, \fB\fCserverConfig.moray\fR comes from a SAPI configuration template.  For
+\fBTriton services\fP, it will typically look like this:
+.PP
+.RS
+.nf
+{
+    "srvDomain": "{{{MORAY_SERVICE}}}"
+    "cueballOptions": {
+        "resolvers": [ "{{{BINDER_SERVICE}}}" ]
+    }
+}
+.fi
+.RE
+.PP
+That will expand to something like this:
+.PP
+.RS
+.nf
+{
+    "srvDomain": "moray.mydatacenter.joyent.us",
+    "cueballOptions": {
+        "resolvers": [ "binder.mydatacenter.joyent.us" ]
+    }
+}
+.fi
+.RE
+.PP
+For \fBManta services\fP, the template file will typically include a block that
+looks like this:
+.PP
+.RS
+.nf
+{
+    "srvDomain": "{{MARLIN_MORAY_SHARD}}",
+    "cueballOptions": {
+        "resolvers": [ "nameservice.{{DOMAIN_NAME}}" ]
+    }
+}
+.fi
+.RE
+.PP
+That will expand to something like this:
+.PP
+.RS
+.nf
+{
+    "srvDomain": "1.moray.myregion.joyent.us",
+    "cueballOptions": {
+        "resolvers": [ "nameservice.myregion.joyent.us" ]
+    }
+}
+.fi
+.RE
+.PP
+This approach (using a block from the configuration file) allows operators to
+reconfigure a service to point at a specific instance by replacing the
+\fB\fCsrvDomain\fR property with \fB\fChost\fR and \fB\fCport\fR properties.
+.PP
+Command\-line tools that use Moray should typically define their own options for
+specifying \fB\fCsrvDomain\fR, \fB\fChost\fR, and \fB\fCport\fR properties.  See \fB\fCmoray(1)\fR for the
+command\-line options and fallback environment variables used by the built\-in
+Moray tools.
+.PP
+Command\-line tools should generally also specify \fB\fCfailFast\fR and
+\fB\fCmustCloseBeforeNormalProcessExit\fR\&.
+.SS Making RPC calls
+.PP
+Callers make RPC calls by invoking RPC methods on the client.  The specific
+methods are documented in the Moray server \[la]https://github.com/joyent/moray\[ra]
+reference documentation.
+.PP
+All RPC methods are asynchronous, and they all follow one of two styles
+described in the "Node.js Error Handling" documentat.  The style used depends on
+the kind of data returned by the RPC.
+.RS
+.IP \(bu 2
+RPC calls that return a fixed number of results (usually just one object or a
+small chunk of metadata) are callback\-based: the last argument to the RPC
+method is a callback.  The first argument to the callback is an optional
+error, and subsequent arguments are RPC\-specific.
+.IP \(bu 2
+RPC calls that return a large or variable number of results (like
+\fB\fCfindObjects\fR) are event\-emitter\-based: they return an event emitter that
+emits \fB\fCerror\fR on failure, \fB\fCend\fR on completion, and other events depending on
+the RPC call.
+.RE
+.PP
+All of the RPC methods take an optional \fB\fCoptions\fR argument that is always the
+last non\-callback argument.  (For callback\-based RPCs, it's the second\-to\-last
+argument.  For event\-emitter\-based RPCs, it's the last argument.)  You can use
+this to pass in a \fB\fCreq_id\fR for correlating log entries from one service with
+the Moray client log entries.  Some APIs (namely put/get/del object) have
+additional options to allow cache bypassing, for example.
+.SH OPTIONS
+.PP
+The client constructor uses named arguments on a single \fB\fCargs\fR object.
+.PP
+All constructor invocations must provide:
+.TP
+\fB\fClog\fR (object)
+a bunyan\-style logger
+.PP
+All constructor invocations must also provide one of the following:
+.TP
+\fB\fCsrvDomain\fR (string)
+DNS domain name for SRV\-based service discovery
+.TP
+\fB\fCurl\fR (string)
+Describes the hostname or IP address and TCP port to specify a specific
+Moray server to connect to (instead of using SRV\-based service discovery).
+This is deprecated for servers, and should only be used for tools, for
+testing, and for unusual, temporary operational changes.  The format for
+this option is the same as for the \fB\fCMORAY_URL\fR environment variable
+described in \fB\fCmoray(1)\fR\&.
+.TP
+\fB\fChost\fR (string) and \fB\fCport\fR (integer or string)
+Like \fB\fCURL\fR, but specified using different properties.
+.PP
+Callers may also provide:
+.TP
+\fB\fCcueballOptions\fR (object)
+Overrides cueball\-related options, including various timeouts and delays.
+For specific options that can be overridden here, see the source.  \fBNOTE:
+it's not expected that most consumers would need to specify any of these.
+Default values ought to work for the port, DNS service, and all the various
+timeouts, delays, and retry limits.\fP
+.TP
+\fB\fCfailFast\fR (boolean)
+If true, this sets a more aggressive retry policy, and the client emits
+"error" when the underlying Cueball set reaches state "failed".  This is
+intended for use by command\-line tools to abort when it looks like dependent
+servers are down.  Servers should generally not specify this option because
+they should wait indefinitely for dependent services to come up.
+.TP
+\fB\fCunwrapErrors\fR (boolean)
+If false (the default), Errors emitted by this client and RPC requests will
+contain a cause chain that explains precisely what happened.  For example,
+if an RPC fails with SomeError, you'll get back a FastRequestError
+(indicating a request failure) caused by a FastServerError (indicating that
+the failure was on the remote server, as opposed to a local or
+transport\-level failure) caused by a SomeError.  In this mode, you should
+use VError.findCauseByName(err, 'SomeError') to determine whether the root
+cause was a SomeError.
+If the "unwrapErrors" option is true, then Fast\-level errors are unwrapped
+and the first non\-Fast error in the cause chain is returned.  This is
+provided primarily for compatibility with legacy code that uses err.name to
+determine what kind of Error was returned.  New code should prefer
+VError.findCauseByName() instead.
+.TP
+\fB\fCmustCloseBeforeNormalProcessExit\fR (boolean)
+If true, then cause the program to crash if it would otherwise exit 0 and
+this client has not been closed.  This is useful for making sure that client
+consumers clean up after themselves.
+.PP
+Some legacy options are accepted as documented in the source.
+.SH ENVIRONMENT
+.PP
+The \fB\fCLOG_LEVEL\fR, \fB\fCMORAY_SERVICE\fR, and \fB\fCMORAY_URL\fR environment variables are
+interpreted by each command\-line tool, not the client library itself.
+.SH SEE ALSO
+.PP
+\fB\fCmoray(1)\fR, Moray server reference
+documentation \[la]https://github.com/joyent/moray/blob/master/docs/index.md\[ra],
+Node.js Error
+Handling \[la]https://www.joyent.com/node-js/production/design/errors\[ra]\&.
+.SH DIAGNOSTICS
+.PP
+The client library logs messages using the bunyan logger.  Increase the log
+level for more verbose output.
+.PP
+The underlying node\-fast \[la]https://github.com/joyent/node-fast\[ra] RPC library
+provides DTrace probes on supported systems for inspecting low\-level RPC events.
+.PP
+Use Node's \fB\fC\-\-abort\-on\-uncaught\-exception\fR command\-line argument to enable core
+file generation upon fatal program failure.  These core files can be used with
+mdb_v8 \[la]https://github.com/joyent/mdb_v8\[ra] to inspect the program's state at the
+time of the crash.
