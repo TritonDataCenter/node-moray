@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.1.1
+
+* [MORAY-396](http://smartos.org/bugview/MORAY-396) update to cueball v2
+
 ## v3.1.0
 
 * [MORAY-254](http://smartos.org/bugview/MORAY-254) moray tools need manual
