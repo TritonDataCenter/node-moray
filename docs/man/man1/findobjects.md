@@ -6,7 +6,7 @@ findobjects - fetch the contents of multiple objects using a filter
 
 ## SYNOPSIS
 
-`findobjects [COMMON_OPTIONS] [-Hns] [-a FIELD] [-d FIELD] [-l LIMIT] [-o OFFSET] BUCKET FILTER`
+`findobjects [COMMON_OPTIONS] [-Hins] [-a FIELD] [-d FIELD] [-l LIMIT] [-o OFFSET] BUCKET FILTER`
 
 ## DESCRIPTION
 
@@ -68,6 +68,12 @@ use unindexed fields often results in truncated result sets.
 `-H`
   Print objects using minimal JSON with one object per line (instead of
   inserting newlines within objects and indenting for readability)
+
+`-i`
+  Require all fields used in `FILTER` to have associated usable indexes.  That
+  is, every field mentioned in `FILTER` must have a corresponding index, and no
+  field must be being re-indexed.  If the requirement is not met, the command
+  will return an error.
 
 `-l LIMIT`
   Return at most `LIMIT` objects.  With `-o OFFSET`, this can be used to page

@@ -239,6 +239,22 @@ Callers may also provide:
   this client has not been closed.  This is useful for making sure that client
   consumers clean up after themselves.
 
+`requireIndexes` (boolean)
+  If true, all `findObjects` requests sent from this client will respond with a
+  `NotIndexedError` error if at least one of the fields included in the search
+  filter has an index that can't be used.
+
+  If the server that handles a given `findObjects` request does not support
+  checking that search fields have usable indexes, an `UnhandledOptionsError`
+  event will be emitted. In this case, the error object will have a property
+  named `unhandledOptions` whose value is an array of strings that will contain
+  the string `'requireIndexes'`, to represent that this option wasn't handled by
+  the moray server that served the `findObjects` request.
+
+  Passing `requireIndexes: false` to any `findObjects` request will disable this
+  behavior for that specific request, regardless of the value of the
+  `requireIndexes` option passed when instantiating the client.
+
 Some legacy options are accepted as documented in the source.
 
 ## ENVIRONMENT

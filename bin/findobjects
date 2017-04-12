@@ -21,7 +21,7 @@ var prettyPrint = true;
 cmdutil.configure({
     'usageMessage': 'fetch objects from Moray matching a filter',
     'synopses': [
-        moraycli.commonUsage + '[-Hns] [-a attr] [-d attr] [-l limit] ' +
+        moraycli.commonUsage + '[-Hins] [-a attr] [-d attr] [-l limit] ' +
             '[-o offset] BUCKET FILTER'
     ]
 });
@@ -32,7 +32,7 @@ parser = moraycli.parseCliOptions({
     'argv': process.argv,
     'env': process.env,
     'errstream': process.stderr,
-    'extraOptStr': 'a:d:Hl:no:s',
+    'extraOptStr': 'a:d:Hil:no:s',
     'clientOptions': clientOptions,
     'onUsage': cmdutil.usage,
     'onOption': function (option) {
@@ -53,6 +53,10 @@ parser = moraycli.parseCliOptions({
 
         case 'H':
             prettyPrint = false;
+            break;
+
+        case 'i':
+            findOptions.requireIndexes = true;
             break;
 
         case 'l':

@@ -1,7 +1,7 @@
 {
     "name": "moray",
     "description": "Moray client library",
-    "version": "3.1.1",
+    "version": "3.2.0",
     "author": "Joyent (joyent.com)",
     "keywords": [ "moray" ],
     "main": "./lib/index.js",
@@ -22,7 +22,7 @@
         "posix-getopt": "^1.0.0",
         "progbar": "0.1.0",
         "vasync": "^1.6.4",
-        "verror": "^1.7.0"
+        "verror": "^1.9.0"
     },
     "directories": {
         "bin": "./bin",

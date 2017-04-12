@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.2.0
+
+* [MORAY-104](http://smartos.org/bugview/MORAY-104) disallow filtering on non-indexed fields except interactively
+
 ## v3.1.1
 
 * [MORAY-396](http://smartos.org/bugview/MORAY-396) update to cueball v2
