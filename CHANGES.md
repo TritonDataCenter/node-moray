@@ -1,5 +1,9 @@
 # Changelog
 
+## v.3.3.0
+
+* [MANTA-3371](https://devhub.joyent.com/jira/browse/MANTA-3371) triggers cannot be installed with any vnodes in read-only mode
+
 ## v3.2.0
 
 * [MORAY-104](http://smartos.org/bugview/MORAY-104) disallow filtering on non-indexed fields except interactively
