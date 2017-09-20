@@ -1,31 +1,35 @@
 # Changelog
 
+## v.3.4.0
+
+* [MORAY-428](https://smartos.org/bugview/MORAY-428) Make it safer to use reindexing buckets
+
 ## v.3.3.0
 
-* [MANTA-3371](https://devhub.joyent.com/jira/browse/MANTA-3371) triggers cannot be installed with any vnodes in read-only mode
+* [MANTA-3371](https://smartos.org/bugview/MANTA-3371) triggers cannot be installed with any vnodes in read-only mode
 
 ## v3.2.0
 
-* [MORAY-104](http://smartos.org/bugview/MORAY-104) disallow filtering on non-indexed fields except interactively
+* [MORAY-104](https://smartos.org/bugview/MORAY-104) disallow filtering on non-indexed fields except interactively
 
 ## v3.1.1
 
-* [MORAY-396](http://smartos.org/bugview/MORAY-396) update to cueball v2
+* [MORAY-396](https://smartos.org/bugview/MORAY-396) update to cueball v2
 
 ## v3.1.0
 
-* [MORAY-254](http://smartos.org/bugview/MORAY-254) moray tools need manual
+* [MORAY-254](https://smartos.org/bugview/MORAY-254) moray tools need manual
   pages
 
 ## v3.0.0
 
-* [MORAY-280](http://smartos.org/bugview/MORAY-280) Support SRV records in node-moray
-* [MORAY-381](http://smartos.org/bugview/MORAY-381) want default values with cueballOptions
-* [MORAY-380](http://smartos.org/bugview/MORAY-380) translateLegacyOptions not setting "service"
-* [MORAY-383](http://smartos.org/bugview/MORAY-383) moray client log entries could include specific backend details
-* [MORAY-384](http://smartos.org/bugview/MORAY-384) moray's default connection backoff need to be much less aggressive
-* [MORAY-385](http://smartos.org/bugview/MORAY-385) moray tools need some cleanup
-* [MORAY-349](http://smartos.org/bugview/MORAY-349) remove "backfill" command
+* [MORAY-280](https://smartos.org/bugview/MORAY-280) Support SRV records in node-moray
+* [MORAY-381](https://smartos.org/bugview/MORAY-381) want default values with cueballOptions
+* [MORAY-380](https://smartos.org/bugview/MORAY-380) translateLegacyOptions not setting "service"
+* [MORAY-383](https://smartos.org/bugview/MORAY-383) moray client log entries could include specific backend details
+* [MORAY-384](https://smartos.org/bugview/MORAY-384) moray's default connection backoff need to be much less aggressive
+* [MORAY-385](https://smartos.org/bugview/MORAY-385) moray tools need some cleanup
+* [MORAY-349](https://smartos.org/bugview/MORAY-349) remove "backfill" command
 
 **Breaking changes:**
 
