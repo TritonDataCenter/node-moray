@@ -1,12 +1,12 @@
-# sql 1 "January 2017" Moray "Moray Client Tools"
+# sql 1 "October 2017" Moray "Moray Client Tools"
 
 ## NAME
 
-sql - check of a Moray server is functioning
+sql - check if a Moray server is functioning
 
 ## SYNOPSIS
 
-`sql [COMMON_OPTIONS] SQL`
+`sql [COMMON_OPTIONS] [-r] SQL`
 
 ## DESCRIPTION
 
@@ -20,6 +20,14 @@ This should not be used as part of normal operation.  Normal operations should
 be first-classed as specific Moray requests with associated tools.
 
 ## OPTIONS
+
+`-r`
+  *Only for use in electric-moray.*  Set the read-only override flag
+  (readOnlyOverride) to allow queries to run even if the vnode a particular
+  object hashes to has been marked read-only.  It is not possible in an
+  arbitrary case to know the reason a particular vnode has been set to
+  read-only, so it is important to note once again that *this is dangerous and
+  should ONLY be used by operators and developers while debugging*.
 
 See `moray(1)` for information about the `COMMON_OPTIONS`, which control
 the log verbosity and how to locate the remote server.
