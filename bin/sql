@@ -14,21 +14,32 @@ var cmdutil = require('cmdutil');
 var moray = require('../lib');
 var moraycli = require('../lib/cmd');
 
-var clientOptions, parser, sql, client;
+var clientOptions, parser, sql, client, opts;
 
 cmdutil.configure({
     'usageMessage': 'execute raw SQL on Moray-backed database',
-    'synopses': [ moraycli.commonUsage + ' SQL' ]
+    'synopses': [ moraycli.commonUsage + ' [-r] SQL' ]
 });
 
 clientOptions = {};
+opts = {
+    readOnlyOverride: false
+};
+
 parser = moraycli.parseCliOptions({
     'argv': process.argv,
     'env': process.env,
     'errstream': process.stderr,
-    'extraOptStr': '',
+    'extraOptStr': 'r',
     'clientOptions': clientOptions,
-    'onUsage': cmdutil.usage
+    'onUsage': cmdutil.usage,
+    'onOption': function (option) {
+        if (option.option === 'r') {
+            opts.readOnlyOverride = true;
+        } else {
+            cmdutil.usage();
+        }
+    }
 });
 
 if (parser.optind() >= process.argv.length) {
@@ -39,7 +50,7 @@ sql = process.argv[parser.optind()];
 client = moray.createClient(clientOptions);
 client.on('error', cmdutil.fail);
 client.on('connect', function onConnect() {
-    var req = client.sql(sql);
+    var req = client.sql(sql, opts);
 
     req.once('error', cmdutil.fail);
 
