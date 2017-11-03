@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.4.1
+
+* [MORAY-422](http://smartos.org/bugview/MORAY-422) node-moray could smooth over connection shuffling
+
 ## v.3.4.0
 
 * [MORAY-428](https://smartos.org/bugview/MORAY-428) Make it safer to use reindexing buckets
@@ -7,6 +11,10 @@
 ## v.3.3.0
 
 * [MANTA-3371](https://smartos.org/bugview/MANTA-3371) triggers cannot be installed with any vnodes in read-only mode
+
+## v3.2.1
+
+* [MORAY-409](http://smartos.org/bugview/MORAY-409) Moray client needs to pass timeout to server for sql()
 
 ## v3.2.0
 
