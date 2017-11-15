@@ -12,11 +12,11 @@
     "dependencies": {
         "assert-plus": "^1.0.0",
         "backoff": "^2.4.1",
-        "bunyan": "^1.3.2",
+        "bunyan": "1.8.12",
         "cmdutil": "^1.1.0",
         "cueball": "^2.3.0",
         "extsprintf": "^1.3.0",
-        "fast": "^2.1.0",
+        "fast": "git+https://github.com/misterdjules/node-fast#fix-issue-12",
         "libuuid": "0.2.1",
         "jsprim": "^1.3.0",
         "posix-getopt": "^1.0.0",
