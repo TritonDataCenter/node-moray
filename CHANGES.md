@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.4.2
+
+* [MORAY-455](http://smartos.org/bugview/MORAY-455) moray asks fast to hold onto too many recent RPC requests
+
 ## v3.4.1
 
 * [MORAY-422](http://smartos.org/bugview/MORAY-422) node-moray could smooth over connection shuffling
