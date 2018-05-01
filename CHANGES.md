@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.4.3
+
+* [MORAY-452](http://smartos.org/bugview/MORAY-452) client should use priority-queue to assign connection.
+
 ## v3.4.2
 
 * [MORAY-455](http://smartos.org/bugview/MORAY-455) moray asks fast to hold onto too many recent RPC requests
