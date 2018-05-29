@@ -1,4 +1,4 @@
-.TH moray 3 "January 2017" Moray "Moray Client Library"
+.TH moray 3 "May 2018" Moray "Moray Client Library"
 .SH NAME
 .PP
 moray \- Node.js client library for Moray
@@ -233,6 +233,11 @@ Like \fB\fCURL\fR, but specified using different properties.
 .PP
 Callers may also provide:
 .TP
+\fB\fCcollector\fR (object)
+An artedi \[la]https://github.com/joyent/node-artedi\[ra] metrics collector. This
+will be passed to the underlying node\-fast component which will add metrics
+for count and duration of RPC calls.
+.TP
 \fB\fCcueballOptions\fR (object)
 Overrides cueball\-related options, including various timeouts and delays.
 For specific options that can be overridden here, see the source.  \fBNOTE:
@@ -266,6 +271,22 @@ VError.findCauseByName() instead.
 If true, then cause the program to crash if it would otherwise exit 0 and
 this client has not been closed.  This is useful for making sure that client
 consumers clean up after themselves.
+.TP
+\fB\fCrequireIndexes\fR (boolean)
+If true, all \fB\fCfindObjects\fR requests sent from this client will respond with a
+\fB\fCNotIndexedError\fR error if at least one of the fields included in the search
+filter has an index that can't be used.
+.IP
+If the server that handles a given \fB\fCfindObjects\fR request does not support
+checking that search fields have usable indexes, an \fB\fCUnhandledOptionsError\fR
+event will be emitted. In this case, the error object will have a property
+named \fB\fCunhandledOptions\fR whose value is an array of strings that will contain
+the string \fB\fC\&'requireIndexes'\fR, to represent that this option wasn't handled by
+the moray server that served the \fB\fCfindObjects\fR request.
+.IP
+Passing \fB\fCrequireIndexes: false\fR to any \fB\fCfindObjects\fR request will disable this
+behavior for that specific request, regardless of the value of the
+\fB\fCrequireIndexes\fR option passed when instantiating the client.
 .PP
 Some legacy options are accepted as documented in the source.
 .SH ENVIRONMENT

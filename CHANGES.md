@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.5.0
+
+* [TRITON-375](http://smartos.org/bugview/TRITON-375) node-moray should expose similar metrics to moray server
+
 ## v3.4.2
 
 * [MORAY-455](http://smartos.org/bugview/MORAY-455) moray asks fast to hold onto too many recent RPC requests

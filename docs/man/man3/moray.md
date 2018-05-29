@@ -1,4 +1,4 @@
-# moray 3 "January 2017" Moray "Moray Client Library"
+# moray 3 "May 2018" Moray "Moray Client Library"
 
 ## NAME
 
@@ -204,6 +204,11 @@ All constructor invocations must also provide one of the following:
   Like `URL`, but specified using different properties.
 
 Callers may also provide:
+
+`collector` (object)
+  An [artedi](https://github.com/joyent/node-artedi) metrics collector. This
+  will be passed to the underlying node-fast component which will add metrics
+  for count and duration of RPC calls.
 
 `cueballOptions` (object)
   Overrides cueball-related options, including various timeouts and delays.

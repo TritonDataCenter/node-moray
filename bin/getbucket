@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (c) 2017, Joyent, Inc.
+ * Copyright (c) 2018, Joyent, Inc.
  */
 
 var cmdutil = require('cmdutil');
@@ -53,6 +53,7 @@ client.on('connect', function onConnect() {
         });
 
         console.log(JSON.stringify(b, null, 2));
+        moraycli.cliFinish(cmdutil, client);
         client.close();
     });
 });
