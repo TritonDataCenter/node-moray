@@ -10,14 +10,14 @@
         "url": "git+ssh://git@github.com:joyent/node-moray.git"
     },
     "dependencies": {
-        "artedi": "git+https://github.com/joyent/node-artedi.git#fixed-buckets",
+        "artedi": "2.0.0",
         "assert-plus": "^1.0.0",
         "backoff": "^2.4.1",
         "bunyan": "^1.3.2",
         "cmdutil": "^1.1.0",
         "cueball": "^2.3.0",
         "extsprintf": "^1.3.0",
-        "fast": "git+https://github.com/joyent/node-fast.git#fixed-buckets",
+        "fast": "2.6.0",
         "libuuid": "0.2.1",
         "jsprim": "^1.3.0",
         "posix-getopt": "^1.0.0",
