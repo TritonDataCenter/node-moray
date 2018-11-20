@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.6.0
+
+* [MORAY-494](http://smartos.org/bugview/MORAY-494) node-moray should update fast and artedi dependencies for node-artedi#17
+
 ## v3.5.0
 
 * [TRITON-375](http://smartos.org/bugview/TRITON-375) node-moray should expose similar metrics to moray server
