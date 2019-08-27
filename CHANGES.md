@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* [MANTA-4287](https://jira.joyent.us/browse/MANTA-4287) Update node-moray to use node-fast 2.8.1
+
 ## v3.6.0
 
 * [MORAY-494](http://smartos.org/bugview/MORAY-494) node-moray should update fast and artedi dependencies for node-artedi#17
