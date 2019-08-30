@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v3.7.0
 
 * [MANTA-4287](https://jira.joyent.us/browse/MANTA-4287) Update node-moray to use node-fast 2.8.1
 
