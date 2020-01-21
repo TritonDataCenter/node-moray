@@ -1,5 +1,16 @@
 # Changelog
 
+## v4.0.0
+
+* [MANTA-4990](https://jira.joyent.us/browse/MANTA-4990) Update node-moray to
+  use node-fast 3.0.0 which updates the fast protocol version to version 2.
+
+**Breaking changes:**
+
+Moving to node-fast version 3.0.0 means that clients opting into this version of
+node-moray are incompatible with fast servers using fast protocol version 1
+which is to say any version of node-fast prior to 3.0.0.
+
 ## v3.7.0
 
 * [MANTA-4287](https://jira.joyent.us/browse/MANTA-4287) Update node-moray to use node-fast 2.8.1
