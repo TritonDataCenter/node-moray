@@ -1,4 +1,4 @@
-# moray 3 "May 2018" Moray "Moray Client Library"
+# moray 3 "April 2020" Moray "Moray Client Library"
 
 ## NAME
 
@@ -209,6 +209,11 @@ Callers may also provide:
   An [artedi](https://github.com/joyent/node-artedi) metrics collector. This
   will be passed to the underlying node-fast component which will add metrics
   for count and duration of RPC calls.
+
+`metricLabels` (object)
+  An [artedi](https://github.com/joyent/node-artedi) labels object. This
+  will be passed to the underlying node-fast component and the labels will be
+  added as each metric is collected.
 
 `cueballOptions` (object)
   Overrides cueball-related options, including various timeouts and delays.

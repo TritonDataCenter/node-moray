@@ -1,4 +1,4 @@
-.TH moray 3 "May 2018" Moray "Moray Client Library"
+.TH moray 3 "April 2020" Moray "Moray Client Library"
 .SH NAME
 .PP
 moray \- Node.js client library for Moray
@@ -237,6 +237,11 @@ Callers may also provide:
 An artedi \[la]https://github.com/joyent/node-artedi\[ra] metrics collector. This
 will be passed to the underlying node\-fast component which will add metrics
 for count and duration of RPC calls.
+.TP
+\fB\fCmetricLabels\fR (object)
+An artedi \[la]https://github.com/joyent/node-artedi\[ra] labels object. This
+will be passed to the underlying node\-fast component and the labels will be
+added as each metric is collected.
 .TP
 \fB\fCcueballOptions\fR (object)
 Overrides cueball\-related options, including various timeouts and delays.
