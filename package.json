@@ -3,14 +3,16 @@
     "description": "Moray client library",
     "version": "4.0.0",
     "author": "Joyent (joyent.com)",
-    "keywords": [ "moray" ],
+    "keywords": [
+        "moray"
+    ],
     "main": "./lib/index.js",
     "repository": {
         "type": "git",
         "url": "git+ssh://git@github.com:joyent/node-moray.git"
     },
     "dependencies": {
-        "artedi": "2.0.0",
+        "artedi": "^2.0.2",
         "assert-plus": "^1.0.0",
         "backoff": "^2.4.1",
         "bunyan": "^1.3.2",
@@ -18,9 +20,7 @@
         "cueball": "^2.3.0",
         "extsprintf": "^1.3.0",
         "fast": "3.0.1",
-        "libuuid": "0.2.1",
-        "jsprim": "^1.3.0",
-        "posix-getopt": "^1.0.0",
+        "uuid": "^2.0.3",
         "vasync": "^1.6.4",
         "verror": "^1.9.0"
     },

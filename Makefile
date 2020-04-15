@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2016, Joyent, Inc.
+# Copyright 2020 Joyent, Inc.
 #
 
 #
@@ -56,7 +56,9 @@ include ./tools/mk/Makefile.smf.defs
 #
 .PHONY: all
 all: $(REPO_DEPS)
-	$(NPM) rebuild
+	$(NPM) install
+
+CLEAN_FILES += node_modules
 
 #
 # Manual pages are checked into this repository.  See Makefile.manpages.defs for
