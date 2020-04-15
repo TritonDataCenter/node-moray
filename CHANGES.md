@@ -1,5 +1,14 @@
 # Changelog
 
+## v4.0.0
+
+* [MANTA-5170](https://jira.joyent.us/browse/MANTA-5170) moray client metrics should allow additional labels
+
+**Breaking changes:**
+
+* This is a breaking change because it updates node-fast to 3.x. You can read
+  about the consequences of that here: https://github.com/joyent/node-fast/blob/master/CHANGES.md#v300
+
 ## v3.7.0
 
 * [MANTA-4287](https://jira.joyent.us/browse/MANTA-4287) Update node-moray to use node-fast 2.8.1
