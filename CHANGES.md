@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.0.2
+
+* Add "files" to package.json to avoid unnecessary voluminous junk in the
+  publish npm package.
+
 ## v4.0.1
 
 * [MANTA-5186](https://jira.joyent.us/browse/MANTA-5186) switch UUID generation lib from `libuuid` to `uuid`

@@ -58,7 +58,7 @@ include ./tools/mk/Makefile.smf.defs
 all: $(REPO_DEPS)
 	$(NPM) install
 
-CLEAN_FILES += node_modules
+CLEAN_FILES += node_modules moray-*.tgz
 
 #
 # Manual pages are checked into this repository.  See Makefile.manpages.defs for
