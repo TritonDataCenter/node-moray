@@ -1,5 +1,9 @@
 # Changelog
 
+## v4.0.1
+
+* [MANTA-5186](https://jira.joyent.us/browse/MANTA-5186) switch UUID generation lib from `libuuid` to `uuid`
+
 ## v4.0.0
 
 * [MANTA-5170](https://jira.joyent.us/browse/MANTA-5170) moray client metrics should allow additional labels
