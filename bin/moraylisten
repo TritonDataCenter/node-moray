@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/*
+ * Copyright 2020 Joyent, Inc.
+ */
+
+var cmdutil = require('cmdutil');
+var moray = require('../lib');
+var moraycli = require('../lib/cmd');
+
+var channel, parser, client, clientOptions;
+
+cmdutil.configure({
+    'usageMessage': 'listen for Moray notifications',
+    'synopses': [ moraycli.commonUsage + ' CHANNEL']
+});
+
+clientOptions = {};
+parser = moraycli.parseCliOptions({
+    'argv': process.argv,
+    'env': process.env,
+    'errstream': process.stderr,
+    'extraOptStr': 'c',
+    'clientOptions': clientOptions,
+    'onUsage': cmdutil.usage,
+    'onOption': function (option) {
+        switch (option.option) {
+        default:
+            cmdutil.usage();
+            break;
+        }
+    }
+});
+
+if (parser.optind() >= process.argv.length)
+    cmdutil.usage('missing required argument: "channel"');
+channel = process.argv[parser.optind()];
+
+client = moray.createClient(clientOptions);
+client.on('error', cmdutil.fail);
+client.on('connect', function onConnect() {
+    process.stderr.write('Connected - listening for "' + channel +
+        '" notifications\n');
+
+    process.on('SIGINT', function _catchSigInt() {
+        process.stderr.write('Caught interrupt signal - shutting down\n');
+        moraycli.cliFinish(cmdutil, client);
+        listener.unlisten(function _unlistenCb() {
+            client.close();
+        });
+    });
+
+    var listener = client.listen(channel);
+
+    listener.on('readable', function _readable() {
+        var notification = listener.read();
+        while (notification) {
+            console.log(notification.payload);
+            notification = listener.read();
+        }
+    });
+
+    listener.once('error', cmdutil.fail);
+});

@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.1.0
+
+* [TRITON-2142](https://jira.joyent.us/browse/TRITON-2142) add listen() and
+  notify() APIs to allow use of PostgreSQL listen/notify features.
+
 ## v4.0.2
 
 * Add "files" to package.json to avoid unnecessary voluminous junk in the
