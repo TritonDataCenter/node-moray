@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/*
+ * Copyright 2020 Joyent, Inc.
+ */
+
+var cmdutil = require('cmdutil');
+var moray = require('../lib');
+var moraycli = require('../lib/cmd');
+
+var channel, client, clientOptions, parser, payload;
+
+cmdutil.configure({
+    'usageMessage': 'send a Moray notification',
+    'synopses': [ moraycli.commonUsage + ' CHANNEL PAYLOAD']
+});
+
+clientOptions = {};
+parser = moraycli.parseCliOptions({
+    'argv': process.argv,
+    'env': process.env,
+    'errstream': process.stderr,
+    'extraOptStr': 'c',
+    'clientOptions': clientOptions,
+    'onUsage': cmdutil.usage,
+    'onOption': function (option) {
+        switch (option.option) {
+        default:
+            cmdutil.usage();
+            break;
+        }
+    }
+});
+
+if (parser.optind() >= process.argv.length)
+    cmdutil.usage('missing required argument: "channel"');
+channel = process.argv[parser.optind()];
+
+if (parser.optind()+1 >= process.argv.length)
+    cmdutil.usage('missing required argument: "payload"');
+payload = process.argv[parser.optind()+1];
+
+client = moray.createClient(clientOptions);
+
+client.on('error', cmdutil.fail);
+
+client.on('connect', function onConnect() {
+    client.notify(channel, payload, function _onNotifyComplete(err) {
+        if (err) {
+            cmdutil.fail(err);
+        }
+
+        moraycli.cliFinish(cmdutil, client);
+        client.close();
+    });
+});

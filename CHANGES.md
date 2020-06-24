@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.8.0
+
+* [TRITON-2142](https://jira.joyent.us/browse/TRITON-2142) add listen() and
+  notify() APIs to allow use of PostgreSQL listen/notify features.
+
 ## v3.7.0
 
 * [MANTA-4287](https://jira.joyent.us/browse/MANTA-4287) Update node-moray to use node-fast 2.8.1
