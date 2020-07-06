@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.1.1
+
+* [MANTA-5337](https://jira.joyent.us/browse/MANTA-5337) Fix a bug introduced
+  in v4.0.1 that could result in a node-moray install missing required deps.
+
 ## v4.1.0
 
 * [TRITON-2142](https://jira.joyent.us/browse/TRITON-2142) add listen() and
