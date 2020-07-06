@@ -18,6 +18,13 @@ contributing guidelines and general documentation at the main
 [Manta](http://github.com/joyent/manta) project pages.
 
 
+# Active Branches
+
+1. The "master" branch is currently for node-moray 4.x releases.
+2. The "3.x" branch is currently for node-moray 3.x releases to support users
+   that must still use the older node-fast protocol (before node-fast 3.x).
+
+
 # Overview
 
 This is the Node.js client SDK for [Moray](https://github.com/joyent/moray).
