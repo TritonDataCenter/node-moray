@@ -1,5 +1,9 @@
 # Changelog
 
+## v4.1.2
+
+* Bump to node-fast@3.1.2 (bump to microtime@3.0.0)
+
 ## v4.1.1
 
 * [MANTA-5337](https://jira.joyent.us/browse/MANTA-5337) Fix a bug introduced
