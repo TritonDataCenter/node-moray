@@ -1,5 +1,9 @@
 # Changelog
 
+## v4.1.3
+
+* Switch away from git:// URLs
+
 ## v4.1.2
 
 * Bump to node-fast@3.1.2 (bump to microtime@3.0.0)
