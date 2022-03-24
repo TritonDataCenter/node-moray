@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.8.1
+
+* [TOOLS-2525](https://jira.joyent.us/browse/TOOLS-2525) Everything needs to stop cloning with git:// URLs
+
 ## v3.8.0
 
 * [TRITON-2142](https://jira.joyent.us/browse/TRITON-2142) add listen() and
