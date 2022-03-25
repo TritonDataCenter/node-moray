@@ -1,7 +1,7 @@
 {
     "name": "moray",
     "description": "Moray client library",
-    "version": "4.1.3",
+    "version": "4.1.4",
     "author": "Joyent (joyent.com)",
     "keywords": [
         "moray"
@@ -19,7 +19,7 @@
         "cmdutil": "^1.1.0",
         "cueball": "^2.3.0",
         "extsprintf": "^1.3.0",
-        "fast": "3.1.2",
+        "fast": "3.1.3",
         "jsprim": "^1.3.0",
         "posix-getopt": "^1.0.0",
         "uuid": "^3.4.0",
