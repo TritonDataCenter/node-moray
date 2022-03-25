@@ -1,5 +1,10 @@
 # Changelog
 
+## v4.1.4
+
+* TOOLS-2525 Everything needs to stop cloning with git:// URLs (again)
+  node-fast dependency uses git:// URL
+
 ## v4.1.3
 
 * Switch away from git:// URLs
