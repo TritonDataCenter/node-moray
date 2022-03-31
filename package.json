@@ -13,7 +13,7 @@
         "assert-plus": "0.1.5",
         "backoff": "^2.4.1",
         "bunyan": "^1.3.2",
-        "fast": "^0.5.0",
+        "fast": "git+https://github.com/joyent/node-fast.git#c421980",
         "native-dns": "0.7.0",
         "libuuid": "0.2.1",
         "once": "1.3.0",
