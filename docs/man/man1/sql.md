@@ -1,12 +1,12 @@
-# sql 1 "January 2017" Moray "Moray Client Tools"
+# sql 1 "October 2017" Moray "Moray Client Tools"
 
 ## NAME
 
-sql - check of a Moray server is functioning
+sql - execute raw SQL against Moray data
 
 ## SYNOPSIS
 
-`sql [COMMON_OPTIONS] SQL`
+`sql [COMMON_OPTIONS] [-r] SQL`
 
 ## DESCRIPTION
 
@@ -20,6 +20,15 @@ This should not be used as part of normal operation.  Normal operations should
 be first-classed as specific Moray requests with associated tools.
 
 ## OPTIONS
+
+`-r`
+  *Only for use in electric-moray.*  Ordinarily electric-moray will prohibit the
+  execution of raw SQL against any vnode that has been set to read-only mode in
+  order to avoid modifactions to the read-only metadata.  When this flag is set,
+  the check that prevents that execution is bypassed, so these queries will run
+  even if some vnodes have been marked read-only.  You are responsible for
+  vetting any query run with this command, since arbitrary SQL could cause many
+  problems noted above.
 
 See `moray(1)` for information about the `COMMON_OPTIONS`, which control
 the log verbosity and how to locate the remote server.
